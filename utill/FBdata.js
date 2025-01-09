@@ -28,24 +28,8 @@ export async function storeBookedHalls(HallsData) {
     return response.data.name;
 }
 
-// export async function fetchHalls() {
-//     const response = await axios.get(backend_url + "/halls.json");
-//     const hall = [];
-//     for (const key in response.data) {
-//         const obj = {
-//             id: key,
-//             name: response.data[key].name,
-//             imageUrl: response.data[key].imageUrl,
-//             location: response.data[key].location,
-//             phoneNumber: response.data[key].phoneNumber,
-//             services: response.data[key].services
-//         }
-//         hall.push(obj);
-//     }
-//     return hall;
-// }
-
-export async function fetchHalls(page = 1, size = 10, filterData = {},searchQuery) {
+// Dynamically handle empty filters
+export async function fetchHalls(page = 1, size = 10, filterData = {}, searchQuery) {
     const {
         priceRange = [0, 10000000],
         capacityRange = [0, 2147483647],
@@ -57,22 +41,23 @@ export async function fetchHalls(page = 1, size = 10, filterData = {},searchQuer
     const [minCapacity, maxCapacity] = capacityRange;
 
     try {
-        console.log(section1)
+        const params = {
+            page,
+            size,
+            minPrice,
+            maxPrice,
+            minCapacity,
+            maxCapacity,
+            sortByRecommendation: false,
+            filterByProximity: false,
+            radius: 15,
+            sortByPrice: false,
+            search: searchQuery?.trim() || null, // Reset search to null if empty
+            location: section1?.trim() || null, // Reset location to null if empty
+        };
+
         const response = await axios.get(`${BASE_URL}/whitelist/getAll`, {
-            params: {
-                page,
-                size,
-                minPrice,
-                maxPrice,
-                minCapacity,
-                maxCapacity,
-                sortByRecommendation: false,
-                filterByProximity: false,
-                radius: 15,
-                sortByPrice: false,
-                ...(searchQuery ? { search: searchQuery } : {}),
-                ...(section1 ? { location: section1 } : {})
-            },
+            params,
             headers: {
                 Accept: "*/*",
             },
@@ -100,7 +85,8 @@ export async function fetchHalls(page = 1, size = 10, filterData = {},searchQuer
 
 
 
-export async function fetchOwnersHalls(token, userId, page = 1, size = 10) {
+
+export async function fetchOwnersHalls(token, userId, page = 1, size = 3) {
     try {
         const response = await axios.get(`${BASE_URL}/hallOwner/getAll`, {
             params: {
@@ -110,28 +96,32 @@ export async function fetchOwnersHalls(token, userId, page = 1, size = 10) {
             },
             headers: {
                 Accept: "*/*",
-                Authorization: `Bearer ${token}`, // Use token passed as argument
+                Authorization: `Bearer ${token}`,
             },
         });
 
-        return response.data.content.map((hall) => ({
-            id: hall.id,
-            name: hall.name,
-            imageUrl: hall.image.split(",")[0]?.trim(), // Parse the first URL
-            location: hall.location,
-            phoneNumber: hall.phone,
-            services: hall.services,
-            capacity: hall.capacity,
-            description: hall.description,
-            price: hall.price,
-            longitude: hall.longitude,
-            latitude: hall.latitude,
-        }));
+        return {
+            halls: response.data.content.map((hall) => ({
+                id: hall.id,
+                name: hall.name,
+                imageUrl: hall.image.split(",")[0]?.trim(),
+                location: hall.location,
+                phoneNumber: hall.phone,
+                services: hall.services,
+                capacity: hall.capacity,
+                description: hall.description,
+                price: hall.price,
+                longitude: hall.longitude,
+                latitude: hall.latitude,
+            })),
+            totalElements: response.data.totalElements, // Return totalElements for pagination
+        };
     } catch (error) {
         console.error("Error fetching halls:", error.response?.data || error.message);
         throw error;
     }
 }
+
 
 
 export async function fetchOwnersReservedHalls(token, userId, page = 1, size = 10) {
@@ -148,24 +138,30 @@ export async function fetchOwnersReservedHalls(token, userId, page = 1, size = 1
             },
         });
 
-        return response.data.content.map((hall) => ({
+        // Parse the response
+        const reservedHalls = response.data.content.map((hall) => ({
             id: hall.id,
-            name: hall.name,
-            imageUrl: hall.image.split(",")[0]?.trim(), // Parse the first URL
-            location: hall.location,
-            phoneNumber: hall.phone,
-            services: hall.services,
-            capacity: hall.capacity,
-            description: hall.description,
-            price: hall.price,
-            longitude: hall.longitude,
-            latitude: hall.latitude,
+            hallId: hall.hallId,
+            time: hall.time,
+            endTime: hall.endTime || null,
+            totalPrice: hall.totalPrice || 0,
+            hallName: hall.hallName || "N/A",
+            category: hall.category || "N/A",
+            services: hall.services || {},
+            rated: hall.rated || false,
         }));
+
+        // Return both the reserved halls and the totalElements count
+        return {
+            reservedHalls,
+            totalElements: response.data.totalElements, // Total number of elements
+        };
     } catch (error) {
-        console.error("Error fetching halls:", error.response?.data || error.message);
+        console.error("Error fetching reserved halls:", error.response?.data || error.message);
         throw error;
     }
 }
+
 
 export async function fetchBookedHalls(userId, token, page = 1, size = 10) {
     try {
@@ -182,31 +178,35 @@ export async function fetchBookedHalls(userId, token, page = 1, size = 10) {
         });
 
         if (response.status === 200) {
-            return response.data.content.map((hall) => ({
+            const { content, totalPages, totalElements } = response.data;
+
+            const formattedHalls = content.map((hall) => ({
                 id: hall.id,
-                name: hall.name,
-                imageUrl: hall.image.split(",")[0]?.trim(), // Parse the first URL
-                location: hall.location,
-                phoneNumber: hall.phone,
+                hallId: hall.hallId,
+                name: hall.hallName,
+                category: hall.category,
+                totalPrice: hall.totalPrice,
+                rated: hall.rated,
+                time: hall.time,
+                endTime: hall.endTime,
                 services: hall.services,
-                capacity: hall.capacity,
-                description: hall.description,
-                price: hall.price,
-                longitude: hall.longitude,
-                latitude: hall.latitude,
             }));
+
+            return {
+                halls: formattedHalls,
+                totalPages,
+                totalElements,
+            };
         }
     } catch (error) {
         if (error.response?.status === 403) {
-            // Return an empty array if the status is 403
-            return [];
+            return { halls: [], totalPages: 0, totalElements: 0 }; // Return empty results for 403
         }
-
-        // Log and rethrow other errors
-        console.error("Error fetching halls:", error.response?.data || error.message);
+        console.error("Error fetching booked halls:", error);
         throw error;
     }
 }
+
 
 
 export async function fetchFavoriteHalls(userId, token, page = 1, size = 10) {

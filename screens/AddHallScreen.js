@@ -46,7 +46,12 @@ export function AddHallScreen() {
     const [proofFile, setProofFile] = useState(null);
     const userData = useSelector((state) => state.bookedHalls.userData);
     const [selectedLocation, setSelectedLocation] = useState();
-
+    const region = {
+        latitude: selectedLocation?.lat || 31.902764, // Default latitude
+        longitude: selectedLocation?.lng || 35.2034184, // Default longitude
+        latitudeDelta: 0.01, // Zoom level for latitude
+        longitudeDelta: 0.01, // Zoom level for longitude
+    };
 
     const handlePickImage = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
@@ -375,7 +380,7 @@ export function AddHallScreen() {
             services,
             categories: selectedCategories,
             image: imageUrls,
-            proofFile: `http://192.168.191.51:8080/proofHalls/${proofFile}`,
+            proofFile: "fdgdfgfgfdgfdgdfgfdg",
             hallOwner: {
                 id: userData.id,
             },

@@ -5,7 +5,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { BASE_URL } from "../assets/constant/ip";
 
 export function TimePickScreen({ navigation, route }) {
-    const { id , selectedCategory , selectedServices} = route.params;
+    const { id , selectedCategory , selectedServices,selectedPrice} = route.params;
 
     const today = toDateId(new Date());
     const [selectedDate, setSelectedDate] = useState(today);
@@ -57,7 +57,8 @@ export function TimePickScreen({ navigation, route }) {
             id: id,
             selectedDate: isoDate, // Send the ISO date format
             selectedCategory: selectedCategory,
-            selectedServices: selectedServices
+            selectedServices: selectedServices,
+            selectedPrice:selectedPrice
         });
     };
 

@@ -1,17 +1,29 @@
 import React, { useState, useContext } from 'react';
-import {View, Text, Switch, Button, StyleSheet, Alert, TouchableOpacity, Image, ScrollView} from 'react-native';
+import {
+    View,
+    Text,
+    Switch,
+    Button,
+    StyleSheet,
+    Alert,
+    TouchableOpacity,
+    Image,
+    ScrollView,
+} from 'react-native';
 import { AuthContext } from '../store/auth-context';
 import { Ionicons } from '@expo/vector-icons';
-import {useSelector} from "react-redux";
+import { useSelector } from 'react-redux';
+import * as ImagePicker from "expo-image-picker";
+import {BASE_URL} from "../assets/constant/ip";
 
-export function SettingScreen({navigation}) {
+export function SettingScreen({ navigation }) {
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [language, setLanguage] = useState('en');
     const authCtx = useContext(AuthContext);
     const userData = useSelector((state) => state.bookedHalls.userData);
 
     const toggleDarkMode = () => {
-        setIsDarkMode(previousState => !previousState);
+        setIsDarkMode((previousState) => !previousState);
     };
 
     const changeLanguage = (newLanguage) => {
@@ -40,14 +52,92 @@ export function SettingScreen({navigation}) {
             <View style={styles.profileSection}>
                 <View style={styles.profileImageContainer}>
                     <Image
-                        source={require('../assets/placeHolder.jpg')}
+                        source={
+                            userData.image
+                                ? { uri: userData.image }
+                                : require('../assets/placeHolder.jpg')
+                        }
                         style={styles.profileImage}
                     />
-                    <TouchableOpacity style={styles.cameraIcon}>
+                    <TouchableOpacity
+                        style={styles.cameraIcon}
+                        onPress={async () => {
+                            try {
+                                // Step 1: Request permissions
+                                const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+                                if (!permissionResult.granted) {
+                                    Alert.alert(
+                                        "Permission Required",
+                                        "Permission to access the media library is required to upload an image."
+                                    );
+                                    return;
+                                }
+
+                                // Step 2: Launch Image Picker
+                                const result = await ImagePicker.launchImageLibraryAsync({
+                                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                                    allowsEditing: true,
+                                    aspect: [1, 1],
+                                    quality: 1,
+                                });
+
+                                if (!result.canceled) {
+                                    const uri = result.assets[0].uri;
+                                    const type = result.assets[0].type || "image/jpeg";
+                                    const name = uri.split("/").pop();
+
+                                    // Step 3: Create FormData
+                                    const formData = new FormData();
+                                    formData.append("image", { uri, type, name });
+
+                                    console.log("Form Data: ", formData);
+                                    formData._parts.forEach((part) => console.log(part));
+
+                                    // Step 4: Upload Image
+                                    const uploadResponse = await fetch(
+                                        `${BASE_URL}/common/uploadImageToProfile?id=${userData.id}`,
+                                        {
+                                            method: "POST",
+                                            headers: {
+                                                Authorization: `Bearer ${authCtx.token}`,
+                                            },
+                                            body: formData,
+                                        }
+                                    );
+
+                                    if (!uploadResponse.ok) {
+                                        const responseText = await uploadResponse.text();
+                                        console.error("Backend Error: ", responseText);
+                                        throw new Error(`Failed to upload profile image. Status: ${uploadResponse.status}`);
+                                    }
+
+                                    const responseData = await uploadResponse.json();
+
+                                    // Step 5: Update User Data
+                                    Alert.alert("Success", "Profile image updated successfully!");
+                                    authCtx.updateUserData({
+                                        ...userData,
+                                        image: responseData.message, // Backend should return the image URL
+                                    });
+                                }
+                            } catch (error) {
+                                console.error("Error uploading profile image:", error);
+                                Alert.alert("Error", "Failed to update profile image. Please try again.");
+                            }
+                        }}
+                    >
                         <Ionicons name="camera" size={24} color="white" />
                     </TouchableOpacity>
+
+
+
+
+
                 </View>
-                <Text style={styles.name}>{userData.firstName} {userData.lastName}</Text>
+                <Text style={styles.name}>
+                    {userData.firstName} {userData.lastName}
+                </Text>
             </View>
 
             {/* Personal Information Section */}
@@ -90,7 +180,13 @@ export function SettingScreen({navigation}) {
                     <Button title="Logout" onPress={handleLogout} color="#d9a773" />
                 </View>
                 <View style={styles.setting}>
-                    <Button title="Change Password" onPress={() => {navigation.navigate("changePass")}} color="#d9a773" />
+                    <Button
+                        title="Change Password"
+                        onPress={() => {
+                            navigation.navigate('changePass');
+                        }}
+                        color="#d9a773"
+                    />
                 </View>
             </View>
         </ScrollView>
@@ -129,10 +225,6 @@ const styles = StyleSheet.create({
         fontSize: 22,
         fontWeight: 'bold',
         marginTop: 10,
-    },
-    info: {
-        fontSize: 16,
-        color: '#777',
     },
     personalInfoSection: {
         marginTop: 20,

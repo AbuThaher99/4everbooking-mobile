@@ -7,10 +7,10 @@ import {setHallData} from "../store/redux/book";
 import {Checkbox, TextInput} from "react-native-paper";
 import {AirbnbRating} from 'react-native-ratings';
 import DropDownPicker from "react-native-dropdown-picker";
-
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
 export function HallsDetails({route, navigation}) {
-    const {id, name, imageUrl, location, phoneNumber, services, description, categories} = route.params;
+    const {id, name, imageUrl, location, phoneNumber, services, description, categories  ,longitude, latitude} = route.params;
     const [selected, setSelected] = useState('About');
     const [text, setText] = useState(description);
     const [reviewText, setReviewText] = useState('');
@@ -25,6 +25,14 @@ export function HallsDetails({route, navigation}) {
     const [checkedItems, setCheckedItems] = useState({});
     const [serviceList, setServiceList] = useState([]);
     const [selectedServiceList, setSelectedServiceList] = useState({});
+    const [selectedPrice, setSelectedPrice] = useState({});
+    const [mapKey, setMapKey] = useState(1); // Add state to force re-render
+
+    useEffect(() => {
+        if (selected === "About") {
+            setMapKey(prevKey => prevKey + 1); // Force re-render when "About" is selected
+        }
+    }, [selected]);
 
     useEffect(() => {
         dispatch(setHallData(route.params));
@@ -46,8 +54,8 @@ export function HallsDetails({route, navigation}) {
 
 
     function AboutHandler() {
-        setSelected('About');
-        setText(description)
+        setSelected("About");
+        setText(description);
     }
 
     const handleCheckboxToggle = (serviceName,servicePrice) => {
@@ -94,7 +102,9 @@ export function HallsDetails({route, navigation}) {
     function handleValueChange(value) {
         const selectedItem = items.find(item => item.value === value);
         setSelectedLabel(selectedItem ? selectedItem.label : null);
+        console.log(selectedItem)
         setValue(value);
+        console.log(value)
 
     }
 
@@ -211,14 +221,40 @@ export function HallsDetails({route, navigation}) {
                     </View>
                 )}
 
-                <Text style={styles.About}>{text}</Text>
+                {selected === "About" && (
+                    <View>
+                        <Text style={styles.About}>{text}</Text>
+                        <View style={styles.mapContainer}>
+                            <MapView
+                                key={mapKey} // Use key to trigger re-render
+                                style={styles.map}
+                                provider={PROVIDER_GOOGLE} // Use Google Maps provider
+                                initialRegion={{
+                                    latitude: latitude,
+                                    longitude: longitude,
+                                    latitudeDelta: 0.01,
+                                    longitudeDelta: 0.01,
+                                }}
+                            >
+                                <Marker
+                                    coordinate={{
+                                        latitude: latitude,
+                                        longitude: longitude,
+                                    }}
+                                    title="Hall Location"
+                                    description={location}
+                                />
+                            </MapView>
+                        </View>
+                    </View>
+                )}
                 <View style={styles.innerContainer}>
 
                 </View>
             </ScrollView>
             {!isBooked &&
                 <TouchableOpacity style={styles.floatingButton} onPress={() => {
-                    navigation.navigate("time", {id: id, selectedCategory: selectedLabel, selectedServices: selectedServiceList})
+                    navigation.navigate("time", {id: id, selectedCategory: selectedLabel, selectedServices: selectedServiceList,selectedPrice: value})
                 }}>
                     <Text style={styles.buttonText}>Book Now</Text>
                 </TouchableOpacity>
@@ -306,6 +342,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         height: 150,
         width: 300,  // Match the width to ensure consistency
+        zIndex: 2000, // Higher zIndex to ensure dropdown is on top
+        elevation: 5, // Adds shadow for Android
 
     },
 
@@ -377,7 +415,18 @@ const styles = StyleSheet.create({
 
     About: {
         marginHorizontal: 16,
-        fontFamily: 'impact'
+        fontSize: 16,
+    },
+    mapContainer: {
+        marginHorizontal: 16,
+        marginTop: 10,
+        borderRadius: 10,
+        overflow: "hidden",
+        height: 200, // Fixed height for the map container
+    },
+    map: {
+        flex: 1,
+        borderRadius: 10,
     },
 
     textArea: {
