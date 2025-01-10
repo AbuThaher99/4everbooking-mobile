@@ -16,7 +16,7 @@ function HallItems({
                        longitude,
                        latitude,
                        averageRating,
-                       HallRatings
+                       HallRatings,
                    }) {
     const nav = useNavigation();
 
@@ -32,7 +32,7 @@ function HallItems({
             categories,
             longitude,
             latitude,
-            HallRatings
+            HallRatings,
         });
     }
 
@@ -55,44 +55,8 @@ function HallItems({
         return `${lowestCategoryPrice} - ${totalHighestPrice}`;
     };
 
-    // Parse and filter the image URLs
-    const parseImageUrls = (imageString) => {
-        // Check if the imageString exists and is not empty
-        if (!imageString || typeof imageString !== "string") {
-            console.log("Invalid or empty image string");
-            return [];
-        }
-
-        // Log the raw image string
-        console.log("Raw image string:", imageString);
-
-        // Split URLs by commas and trim whitespace
-        const urls = imageString.split(",").map((url) => url.trim());
-        console.log("Split URLs:", urls);
-
-        // Filter valid image URLs
-        const validUrls = urls.filter((url) => {
-            // Get the last 3 characters before the `?`
-            const extension = url.split("?")[0].slice(-3).toLowerCase();
-            console.log(`URL: ${url}, Extracted Extension: ${extension}`); // Debug each URL and its extension
-
-            // Check if the extension is a valid image extension
-            return ["jpg", "jpeg", "png", "gif", "bmp", "webp"].some((validExt) =>
-                extension.includes(validExt)
-            );
-        });
-
-        console.log("Filtered Valid URLs:", validUrls);
-        return validUrls;
-    };
-
-
-
-    // Get the first valid image URL
-    const validImageUrls = parseImageUrls(imageUrl);
-    const firstImageUrl = validImageUrls.length > 0 ? validImageUrls[0] : null;
-
-    console.log("First image URL:", firstImageUrl);
+    // Get the first image URL directly
+    const firstImageUrl = imageUrl?.split(",")[0]?.trim() || null;
 
     // Calculate price range
     const priceRange = calculatePriceRange(categories, services);

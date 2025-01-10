@@ -26,7 +26,9 @@ const BookedSlice = createSlice({
         setUserData: (state, action) => {
             state.userData = action.payload; // Set user data
         },
-
+        updateUserImage:(state, action) =>{
+            state.userData.image = action.payload; // Update the image URL
+        },
         setHallData: (state, action) => {
             state.hallData = action.payload; // Set user data
         },
@@ -49,6 +51,7 @@ export const {
     clearUserData,
     setHallData,
     setSearchQuery,
+    updateUserImage, // Ensure this is exported
 } = BookedSlice.actions;
 
 export default BookedSlice.reducer;

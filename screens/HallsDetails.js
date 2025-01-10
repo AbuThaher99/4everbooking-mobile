@@ -8,9 +8,10 @@ import {Checkbox, TextInput} from "react-native-paper";
 import {AirbnbRating} from 'react-native-ratings';
 import DropDownPicker from "react-native-dropdown-picker";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import {FontAwesome} from "@expo/vector-icons";
 
 export function HallsDetails({route, navigation}) {
-    const {id, name, imageUrl, location, phoneNumber, services, description, categories  ,longitude, latitude} = route.params;
+    const {id, name, imageUrl, location, phoneNumber, services, description, categories  ,longitude, latitude,HallRatings} = route.params;
     const [selected, setSelected] = useState('About');
     const [text, setText] = useState(description);
     const [reviewText, setReviewText] = useState('');
@@ -79,6 +80,21 @@ export function HallsDetails({route, navigation}) {
             }
         });
 
+    };
+    const renderStars = (rating) => {
+        const stars = [];
+        for (let i = 1; i <= 5; i++) {
+            stars.push(
+                <FontAwesome
+                    key={i}
+                    name="star"
+                    size={16}
+                    color={i <= rating ? "#cba36b" : "#ccc"}
+                    style={styles.star}
+                />
+            );
+        }
+        return stars;
     };
 
     function reviewHandler() {
@@ -167,23 +183,14 @@ export function HallsDetails({route, navigation}) {
                 </View>
                 {selected === "Reviews" && (
                     <>
-                        <AirbnbRating
-                            count={5}
-                            showRating={false}
-                            reviews={["Terrible", "Bad", "OK", "Good", "Excellent"]}
-                            defaultRating={3}
-                            size={30}
-                            onFinishRating={(rating) => onRateChange(rating)}
-                        />
-
-                        <TextInput
-                            label="Your comment"
-                            value={reviewText}
-                            onChangeText={commentHandler}
-                            style={styles.textArea}
-                            mode="outlined"
-                            multiline
-                        />
+                        {HallRatings.map((rating) => (
+                            <View key={rating.id} style={styles.ratingContainer}>
+                                <View style={styles.starsContainer}>
+                                    {renderStars(rating.rating)}
+                                </View>
+                                <Text style={styles.comment}>{rating.comment}</Text>
+                            </View>
+                        ))}
                     </>
                 )}
 
@@ -254,7 +261,11 @@ export function HallsDetails({route, navigation}) {
             </ScrollView>
             {!isBooked &&
                 <TouchableOpacity style={styles.floatingButton} onPress={() => {
-                    navigation.navigate("time", {id: id, selectedCategory: selectedLabel, selectedServices: selectedServiceList,selectedPrice: value})
+                    if (!selectedLabel) {
+                        alert("Please choose a category.");
+                        return;
+                    }
+                    navigation.navigate("time", { id: id, selectedCategory: selectedLabel, selectedServices: selectedServiceList, selectedPrice: value });
                 }}>
                     <Text style={styles.buttonText}>Book Now</Text>
                 </TouchableOpacity>
@@ -457,6 +468,21 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         overflow: 'hidden',
         right: 20
+    },
+    ratingContainer: {
+        marginVertical: 10,
+        paddingHorizontal: 40,
+    },
+    starsContainer: {
+        flexDirection: 'row',
+        marginBottom: 5,
+    },
+    comment: {
+        fontSize: 14,
+        color: '#555',
+    },
+    star: {
+        marginHorizontal: 2,
     },
 });
 

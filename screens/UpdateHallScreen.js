@@ -31,15 +31,16 @@ const UpdateHallScreen = () => {
     const { hallId } = route.params;
     const isFocused = useIsFocused();
     const userData = useSelector((state) => state.bookedHalls.userData);
+    const [hallOwnerData, setHallOwnerData] = useState(null); // Stores Hall Owner data
 
     // Predefined categories
-    const predefinedCategories = {
-        WEDDINGS: 0,
-        BIRTHDAYS: 0,
-        MEETINGS: 0,
-        PARTIES: 0,
-        FUNERALS: 0,
-    };
+    const predefinedCategories = [
+        { name: "WEDDINGS", price: 0, checked: false },
+        { name: "BIRTHDAYS", price: 0, checked: false },
+        { name: "MEETINGS", price: 0, checked: false },
+        { name: "PARTIES", price: 0, checked: false },
+        { name: "FUNERALS", price: 0, checked: false },
+    ];
 
     const fetchHallDetails = async () => {
         setLoading(true);
@@ -47,20 +48,39 @@ const UpdateHallScreen = () => {
             const response = await axios.get(`${BASE_URL}/whitelist/${hallId}`);
             const hallData = response.data;
 
-            // Ensure all categories are present
-            const updatedCategories = { ...predefinedCategories, ...hallData.categories };
-            setCategories(updatedCategories);
+            // Ensure all predefined categories are present and update their state
+            const updatedCategories = predefinedCategories.map((category) => ({
+                ...category,
+                price: hallData.categories[category.name] || 0,
+                checked: hallData.categories.hasOwnProperty(category.name),
+            }));
 
+            setCategories(updatedCategories);
             setServices(hallData.services || {});
             setHallDetails(hallData);
         } catch (error) {
-            console.error('Error fetching hall details:', error);
-            Alert.alert('Error', 'Failed to fetch hall details.');
+            console.error("Error fetching hall details:", error);
+            Alert.alert("Error", "Failed to fetch hall details.");
         } finally {
             setLoading(false);
         }
     };
 
+    const handleCategoryChange = (categoryName, field, value) => {
+        const updatedCategories = categories.map((category) =>
+            category.name === categoryName
+                ? { ...category, [field]: field === "checked" ? value : parseFloat(value) || 0 }
+                : category
+        );
+        setCategories(updatedCategories);
+    };
+
+    const formatCategoriesForServer = () => {
+        return categories.reduce((acc, category) => {
+            if (category.checked) acc[category.name] = category.price;
+            return acc;
+        }, {});
+    };
     const handleUpdateHall = async () => {
         if (!hallDetails) return;
 
@@ -73,14 +93,33 @@ const UpdateHallScreen = () => {
             description: hallDetails.description,
             phone: hallDetails.phone,
             services: services,
-            categories: categories,
+            categories: formatCategoriesForServer(), // Format categories for the backend
             longitude: hallDetails.longitude,
             latitude: hallDetails.latitude,
         };
 
+            const response = await fetch(
+                `${BASE_URL}/hallOwner/getHallOwnerByUserId/${userData.id}`,
+                {
+                    headers: {
+                        accept: '*/*',
+                        Authorization: `Bearer ${authCtx.token}`,
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch Hall Owner data.');
+            }
+
+            const data = await response.json();
+            console.log("Hall Owner Data:", data);
+            setHallOwnerData(data);
+
+
         try {
             setLoading(true);
-            await axios.put(`${BASE_URL}/hallOwner/${userData.id}`, updatedData, {
+            await axios.put(`${BASE_URL}/hallOwner/${data.id}`, updatedData, {
                 headers: {
                     Authorization: `Bearer ${authCtx.token}`,
                     'Content-Type': 'application/json',
@@ -120,59 +159,60 @@ const UpdateHallScreen = () => {
 
     const handleAddImages = async () => {
         if (newImages.length === 0) {
-            Alert.alert('No Images', 'Please select images to upload.');
+            Alert.alert("No Images", "Please select images to upload.");
             return;
         }
 
         const formData = new FormData();
-
         newImages.forEach((file, index) => {
-            formData.append('image', {
+            formData.append("image", {
                 uri: file.uri,
-                name: file.fileName || `image_${index}.jpg`, // Fallback name
-                type: file.type || 'image/jpeg',            // Fallback type
+                name: file.fileName || `image_${index}.jpg`,
+                type: "image/jpeg", // Ensure the MIME type is correct
             });
         });
 
-        console.log('FormData Parts:', formData._parts);
+        console.log("BASE_URL:", BASE_URL);
+        console.log("Request URL:", `${BASE_URL}/hallOwner/${hallId}/add-image`);
+        console.log("FormData Parts:", formData._parts);
 
         try {
-            setLoading(true);
-
             const response = await fetch(`${BASE_URL}/hallOwner/${hallId}/add-image`, {
-                method: 'POST',
+                method: "POST",
                 headers: {
                     Authorization: `Bearer ${authCtx.token}`,
                 },
                 body: formData,
             });
 
-            console.log('Response Status:', response.status);
-            console.log('Response OK:', response.ok);
-
             if (!response.ok) {
-                throw new Error('Failed to upload images');
+                throw new Error("Failed to upload images");
             }
 
-            const responseData = await response.json(); // Assuming the server returns JSON
-            console.log('Upload Response:', responseData);
+            const responseData = await response.text();
+            console.log("Response Data:", responseData);
 
-            // Update hallDetails with the new image URLs
-            const newImageUrls = responseData.imageUrls; // Adjust based on server response
+            const updatedImages = responseData.replace("Updated images: ", "").trim();
+            const updatedImagesArray = updatedImages.split(',').map((url) => url.trim());
+            const existingImagesArray = hallDetails.image
+                ? hallDetails.image.split(',').map((url) => url.trim())
+                : [];
+
+            const combinedImages = [...new Set([...existingImagesArray, ...updatedImagesArray])];
+
             setHallDetails((prev) => ({
                 ...prev,
-                image: prev.image ? `${prev.image}, ${newImageUrls}` : newImageUrls,
+                image: combinedImages.join(', '), // Combine unique URLs into a single string
             }));
-
-            setNewImages([]); // Clear the new images array after successful upload
-            Alert.alert('Success', 'Images uploaded successfully.');
+            setNewImages([]);
+            Alert.alert("Success", "Images uploaded successfully.");
         } catch (error) {
-            console.error('Error uploading images:', error);
-            Alert.alert('Error', 'Failed to upload images.');
-        } finally {
-            setLoading(false);
+            console.error("Error uploading images:", error);
+            Alert.alert("Error", "Failed to upload images.");
         }
     };
+
+
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -181,9 +221,15 @@ const UpdateHallScreen = () => {
         });
 
         if (!result.canceled) {
-            setNewImages((prev) => [...prev, ...result.assets]);
+            const formattedImages = result.assets.map((image) => ({
+                uri: image.uri,
+                fileName: image.fileName || image.uri.split("/").pop(),
+                type: image.type || "image/jpeg",
+            }));
+            setNewImages((prev) => [...prev, ...formattedImages]);
         }
     };
+
 
     const handleAddService = () => {
         setServices({ ...services, newService: 0 });
@@ -281,24 +327,38 @@ const UpdateHallScreen = () => {
             </View>
             <View style={styles.section}>
                 <Text style={styles.label}>Categories</Text>
-                {Object.entries(categories).map(([key, value]) => (
-                    <View key={key} style={styles.categoryRow}>
-                        <Text>{key}</Text>
+                {categories.map((category, index) => (
+                    <View key={index} style={styles.categoryRow}>
+                        <TextInput
+                            style={[styles.input, { flex: 2 }]}
+                            value={category.name}
+                            editable={false}
+                        />
                         <TextInput
                             style={[styles.input, { flex: 1 }]}
-                            value={String(value)}
+                            value={category.checked ? String(category.price) : ""}
+                            placeholder="Price"
                             keyboardType="numeric"
-                            onChangeText={(price) =>
-                                setCategories({ ...categories, [key]: parseFloat(price) })
-                            }
+                            editable={category.checked}
+                            onChangeText={(price) => handleCategoryChange(category.name, "price", price)}
                         />
+                        <TouchableOpacity
+                            style={[
+                                styles.checkbox,
+                                category.checked ? styles.checkboxChecked : styles.checkboxUnchecked,
+                            ]}
+                            onPress={() => handleCategoryChange(category.name, "checked", !category.checked)}
+                        >
+                            <Text style={styles.checkboxText}>{category.checked ? "✓" : ""}</Text>
+                        </TouchableOpacity>
                     </View>
                 ))}
             </View>
+
             <View style={styles.section}>
                 <Text style={styles.label}>Existing Images</Text>
                 <FlatList
-                    data={hallDetails.image.trim().split(', ')}
+                    data={hallDetails.image.split(',').map((url) => url.trim())} // Ensure each URL is trimmed
                     horizontal
                     renderItem={({ item }) => (
                         <View style={styles.imageContainer}>
@@ -423,7 +483,27 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: 'bold',
         textAlign: 'center',
+    },checkbox: {
+        flex: 0.5,
+        height: 40,
+        width: 40,
+        borderWidth: 1,
+        borderColor: "#ccc",
+        borderRadius: 5,
+        justifyContent: "center",
+        alignItems: "center",
     },
+    checkboxChecked: {
+        backgroundColor: "#28a745",
+    },
+    checkboxUnchecked: {
+        backgroundColor: "#fff",
+    },
+    checkboxText: {
+        color: "#fff",
+        fontWeight: "bold",
+    },
+
 });
 
 export default UpdateHallScreen;

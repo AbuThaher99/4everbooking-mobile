@@ -1,705 +1,426 @@
-import React, {useContext, useState} from "react";
+import React, { useState } from "react";
 import {
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  Button,
+  TouchableOpacity,
+  Alert,
 } from "react-native";
-import * as ImagePicker from "expo-image-picker";
-import {Button, Checkbox, TextInput} from "react-native-paper";
-import {SafeAreaView} from "react-native-safe-area-context";
-import axios from "axios";
-import {useSelector} from "react-redux";
-import * as DocumentPicker from 'expo-document-picker';
-import {AuthContext} from "../store/auth-context";
-import {BASE_URL} from "../assets/constant/ip";
+import { Picker } from "@react-native-picker/picker";
 import MapView, { Marker } from "react-native-maps";
+import * as ImagePicker from "expo-image-picker";
+import { BASE_URL } from "../assets/constant/ip";
 
+export default function AddHallScreen() {
+  const [hallData, setHallData] = useState({
+    name: "",
+    capacity: "",
+    phone: "",
+    description: "",
+    city: "",
+    latitude: "",
+    longitude: "",
+    services: [{ serviceName: "", servicePrice: "" }],
+    categories: [],
+    images: [],
+    proofFile: null,
+  });
 
+  const [categoryPrices, setCategoryPrices] = useState({});
+  const [selectedCity, setSelectedCity] = useState("");
+  const [markerPosition, setMarkerPosition] = useState({
+    latitude: 31.9,
+    longitude: 35.2,
+  });
+  const [errors, setErrors] = useState({});
 
+  const westBankCities = [
+    "Ramallah",
+    "Nablus",
+    "Hebron",
+    "Bethlehem",
+    "Jericho",
+    "Jenin",
+    "Tulkarm",
+    "Qalqilya",
+    "Salfit",
+    "Tubas",
+    "Azzun",
+    "Beit_Jala",
+    "Beit_Sahour",
+    "Dura",
+    "Halhul",
+    "Yatta",
+  ];
 
-export function AddHallScreen() {
-    const [hallName, setHallName] = useState("");
-    const [location, setLocation] = useState("");
-    const [phoneNumber, setPhoneNumber] = useState("");
-    const [capacity, setCapacity] = useState(0);
-    const [about, setAbout] = useState("");
-    const [price, setPrice] = useState(0.0);
-    const [longitude, setLongitude] = useState("");
-    const [latitude, setLatitude] = useState("");
-    const [services, setServices] = useState({});
-    const authCtx = useContext(AuthContext);
-    const [categories, setCategories] = useState({
-        WEDDINGS: {selected: false, price: 0.0},
-        BIRTHDAYS: {selected: false, price: 0.0},
-        MEETINGS: {selected: false, price: 0.0},
-        PARTIES: {selected: false, price: 0.0},
-        FUNERALS: {selected: false, price: 0.0},
+  const handleInputChange = (field, value) => {
+    setHallData({ ...hallData, [field]: value });
+  };
+
+  const handleMapPress = (e) => {
+    const { latitude, longitude } = e.nativeEvent.coordinate;
+    setMarkerPosition({ latitude, longitude });
+    setHallData({ ...hallData, latitude, longitude });
+  };
+
+  const handleAddService = () => {
+    setHallData({
+      ...hallData,
+      services: [...hallData.services, { serviceName: "", servicePrice: "" }],
     });
-    const [image, setImage] = useState(null);
-    const [imageFormData, setImageFormData] = useState(null);
-    const [proofFile, setProofFile] = useState(null);
-    const userData = useSelector((state) => state.bookedHalls.userData);
-    const [selectedLocation, setSelectedLocation] = useState();
-    const region = {
-        latitude: selectedLocation?.lat || 31.902764, // Default latitude
-        longitude: selectedLocation?.lng || 35.2034184, // Default longitude
-        latitudeDelta: 0.01, // Zoom level for latitude
-        longitudeDelta: 0.01, // Zoom level for longitude
-    };
+  };
 
-    const handlePickImage = async () => {
-        let result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 1,
-        });
+  const handleRemoveService = (index) => {
+    const updatedServices = [...hallData.services];
+    updatedServices.splice(index, 1);
+    setHallData({ ...hallData, services: updatedServices });
+  };
 
-        if (!result.canceled) {
-            // Create FormData and append the image
-            const formData = new FormData();
+  const handleServiceChange = (index, field, value) => {
+    const updatedServices = [...hallData.services];
+    updatedServices[index][field] = value;
+    setHallData({ ...hallData, services: updatedServices });
+  };
 
-            const uri = result.assets[0].uri;
-            const type = result.assets[0].type; // e.g., 'image/jpeg'
-            const name = uri.split('/').pop(); // Extract file name from the URI
-            console.log("type ", type)
-            console.log("name ", name)
+  const handlePickImages = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsMultipleSelection: true,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    });
 
-            // Convert URI to a file object and append to formData
-            const file = {
-                uri: uri,
-                type: type,
-                name: name,
-            };
-
-            formData.append("images", file); // Append image to FormData
-
-            // Optionally, you can set formData to the state or use it in an API request
-            setImage(uri);
-            setImageFormData(formData)
-            console.log(formData)
-            console.log("file ", file)
-        }
-    };
-
-    function selectLocationHandler(event) {
-        const lat = event.nativeEvent.coordinate.latitude;
-        const lng = event.nativeEvent.coordinate.longitude;
-
-        setSelectedLocation({ lat: lat, lng: lng });
+    if (!result.canceled) {
+      setHallData({
+        ...hallData,
+        images: [...hallData.images, ...result.assets],
+      });
     }
+  };
 
+  const handlePickProof = async () => {
+    const result = await ImagePicker.launchDocumentAsync({
+      type: "application/pdf",
+    });
 
-    // const handlePickImage = async () => {
-    //     try {
-    //         // Step 1: Launch the Image Picker
-    //         let result = await ImagePicker.launchImageLibraryAsync({
-    //             mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    //             allowsEditing: true,
-    //             aspect: [4, 3],
-    //             quality: 1,
-    //         });
-    //
-    //         if (!result.canceled) {
-    //             const localUri = result.assets[0].uri;
-    //
-    //             // Step 2: Convert the Image to Base64
-    //             const response = await fetch(localUri);
-    //             const blob = await response.blob();
-    //             const reader = new FileReader();
-    //
-    //             reader.readAsDataURL(blob);
-    //             reader.onloadend = async () => {
-    //                 const base64String = reader.result.split(',')[1]; // Get base64 part
-    //
-    //                 // Step 3: Prepare Payload
-    //                 const payload = {
-    //                     images: [base64String], // Array of base64 strings
-    //                 };
-    //
-    //                 // Step 4: Upload Image to the Server
-    //                 try {
-    //                     const uploadResponse = await fetch(
-    //                         'http://192.168.191.51:8080/hallOwner/uploadImageToHall',
-    //                         {
-    //                             method: 'POST',
-    //                             headers: {
-    //                                 'Content-Type': 'application/json',
-    //                                 Accept: '*/*',
-    //                             },
-    //                             body: JSON.stringify(payload),
-    //                         }
-    //                     );
-    //
-    //                     if (uploadResponse.ok) {
-    //                         const uploadedData = await uploadResponse.json();
-    //                         console.log('Upload successful:', uploadedData);
-    //
-    //                         // Assuming the server returns the image URL
-    //                         const uploadedImageUrl = uploadedData.url; // Replace with actual key if different
-    //                         setImage(uploadedImageUrl);
-    //                     } else {
-    //                         console.error('Image upload failed:', uploadResponse.status);
-    //                         Alert.alert('Error', 'Failed to upload image. Please try again.');
-    //                     }
-    //                 } catch (error) {
-    //                     console.error('Error uploading image:', error);
-    //                     Alert.alert('Error', 'An unexpected error occurred during upload.');
-    //                 }
-    //             };
-    //         } else {
-    //             console.log('Image picker was canceled.');
-    //         }
-    //     } catch (error) {
-    //         console.error('Error picking image:', error);
-    //         Alert.alert('Error', 'An unexpected error occurred. Please try again.');
-    //     }
-    // };
+    if (!result.canceled) {
+      setHallData({ ...hallData, proofFile: result });
+    }
+  };
 
+  const handleCategoryChange = (category, price) => {
+    setCategoryPrices({ ...categoryPrices, [category]: price });
+  };
 
-    // const handlePickImage = async () => {
-    //     try {
-    //         const result = await ImagePicker.launchImageLibraryAsync({
-    //             mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    //             allowsEditing: true,
-    //             aspect: [4, 3],
-    //             quality: 1,
-    //         });
-    //
-    //         if (!result.canceled) {
-    //             const localUri = result.assets[0].uri;
-    //
-    //             // Upload the image immediately
-    //             const response = await fetch('http://192.168.191.51:8080/hallOwner/uploadImageToHall', {
-    //                 method: 'POST',
-    //                 headers: {
-    //                     'Content-Type': 'application/json',
-    //                 },
-    //                 body: JSON.stringify({
-    //                     images: [localUri], // Make sure this is base64-encoded if required
-    //                 }),
-    //             });
-    //
-    //             if (response.ok) {
-    //                 const responseData = await response.json();
-    //                 const uploadedImageUrl = responseData[0]; // Adjust based on server response
-    //
-    //                 setImage(uploadedImageUrl); // Save the server URL directly
-    //                 console.log("Image uploaded and URL set:", uploadedImageUrl);
-    //             } else {
-    //                 throw new Error(`Image upload failed with status: ${response.status}`);
-    //             }
-    //         }
-    //     } catch (error) {
-    //         console.error("Error picking or uploading image:", error);
-    //         Alert.alert("Error", "Failed to upload the image. Please try again.");
-    //     }
-    // };
+  const validateForm = () => {
+    const errors = {};
+    if (!hallData.name) errors.name = "Hall name is required.";
+    if (!hallData.capacity) errors.capacity = "Capacity is required.";
+    if (!hallData.phone) errors.phone = "Phone number is required.";
+    if (!hallData.city) errors.city = "City is required.";
+    if (!hallData.latitude || !hallData.longitude)
+      errors.location = "Location is required.";
+    if (!hallData.images.length) errors.images = "At least one image is required.";
+    if (!hallData.proofFile) errors.proofFile = "Proof of ownership is required.";
 
+    setErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
 
-
-
-    const handleAddService = () => {
-        const newServiceName = "";
-        setServices((prevServices) => ({
-            ...prevServices,
-            [newServiceName]: 0,
-        }));
-    };
-
-    const handleServiceChange = (serviceName, field, value) => {
-        setServices((prevServices) => {
-            const currentPrice = prevServices[serviceName] || 0;
-
-            if (field === "name") {
-                const updatedServices = {...prevServices};
-                delete updatedServices[serviceName];
-                updatedServices[value] = currentPrice;
-                return updatedServices;
-            }
-
-            return {
-                ...prevServices,
-                [serviceName]: parseFloat(value) || 0,
-            };
+    try {
+      // Upload images
+      const imageData = new FormData();
+      hallData.images.forEach((image, index) => {
+        imageData.append("images", {
+          uri: image.uri,
+          name: `image${index}.jpg`,
+          type: "image/jpeg",
         });
+      });
 
-        console.log(services);
-    };
+      const imageResponse = await fetch(`${BASE_URL}/hallOwner/uploadImageToHall`, {
+        method: "POST",
+        body: imageData,
+      });
 
+      if (!imageResponse.ok) throw new Error("Failed to upload images");
 
-    const handleDeleteService = (serviceName) => {
-        setServices((prevServices) => {
-            const updatedServices = {...prevServices};
-            delete updatedServices[serviceName];
-            return updatedServices;
-        });
-    };
+      const imageUrls = await imageResponse.text();
 
+      // Upload proof
+      const proofData = new FormData();
+      proofData.append("file", {
+        uri: hallData.proofFile.uri,
+        name: "proof.pdf",
+        type: "application/pdf",
+      });
 
-    const handlePickProofFile = async () => {
-        try {
-            const result = await DocumentPicker.pick({
-                type: [DocumentPicker.types.allFiles], // Allow all file types
-            });
+      const proofResponse = await fetch(`${BASE_URL}/hallOwner/uploadFileProof`, {
+        method: "POST",
+        body: proofData,
+      });
 
-            console.log("Selected File:", result);
+      if (!proofResponse.ok) throw new Error("Failed to upload proof file");
 
-            // If picking multiple files
-            if (Array.isArray(result) && result.length > 0) {
-                setProofFile(result[0].uri); // Use the first file
-            } else {
-                setProofFile(result.uri); // Single file selection
-            }
-        } catch (err) {
-            if (DocumentPicker.isCancel(err)) {
-                console.log("File selection canceled");
-            } else {
-                console.error("Error picking file:", err);
-            }
-        }
-    };
+      const proofUrl = await proofResponse.text();
 
-    const handleCategoryChange = (category, selected) => {
-        setCategories((prevCategories) => ({
-            ...prevCategories,
-            [category]: {
-                ...prevCategories[category],
-                selected,
-            },
-        }));
-    };
+      // Submit hall
+      const hallPayload = {
+        ...hallData,
+        categories: categoryPrices,
+        images: imageUrls,
+        proofFile: proofUrl,
+      };
 
-    const handleCategoryPriceChange = (category, price) => {
-        setCategories((prevCategories) => ({
-            ...prevCategories,
-            [category]: {
-                ...prevCategories[category],
-                price,
-            },
+      const hallResponse = await fetch(`${BASE_URL}/hallOwner/addHall`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(hallPayload),
+      });
 
-        }));
-    };
+      if (!hallResponse.ok) throw new Error("Failed to create hall");
 
-    // const handleSubmit = async () => {
-    //     if (!hallName || !location || !phoneNumber || !capacity || !about || !price || !longitude || !latitude) {
-    //         Alert.alert("Error", "Please fill in all fields and select required files.");
-    //         return;
-    //     }
-    //
-    //     const selectedCategories = Object.entries(categories)
-    //         .filter(([_, value]) => value.selected)
-    //         .reduce((acc, [key, value]) => {
-    //             acc[key] = value.price;
-    //             return acc;
-    //         }, {});
-    //
-    //     const newHallData = {
-    //         name: hallName,
-    //         location,
-    //         phone: phoneNumber,
-    //         capacity,
-    //         description: about,
-    //         price,
-    //         longitude,
-    //         latitude,
-    //         services,
-    //         categories: selectedCategories,
-    //         image: `http://192.168.191.51:8080/HallImage/${image}`,
-    //         proofFile: `http://192.168.191.51:8080/proofHalls/${proofFile}`,
-    //     };
-    //     console.log(selectedCategories)
-    //     console.log(newHallData)
-    //     try {
-    //         const response = await axios.post("http://192.168.191.51:8080/hallOwner/addHall", {
-    //             newHallData,
-    //             hallOwner: {
-    //                 id: userData.id
-    //             },
-    //         });
-    //         console.log("API Response:", response.data);
-    //         Alert.alert("Success", "Hall added successfully!");
-    //     } catch (error) {
-    //         console.error("API Error:", error);
-    //         Alert.alert("Error", "Failed to add hall. Please try again.");
-    //     }
-    // };
+      Alert.alert("Success", "Hall created successfully!");
+    } catch (error) {
+      Alert.alert("Error", error.message);
+    }
+  };
 
+  return (
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Add a New Hall</Text>
 
-    const handleSubmit = async () => {
-        if (!hallName || !location || !phoneNumber || !capacity || !about || !price || !longitude || !latitude) {
-            Alert.alert("Error", "Please fill in all fields and select required files.");
-            return;
-        }
+      {/* Basic Information */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Basic Information</Text>
+        <TextInput
+          placeholder="Enter hall name"
+          value={hallData.name}
+          onChangeText={(value) => handleInputChange("name", value)}
+          style={styles.input}
+        />
+        {errors.name && <Text style={styles.error}>{errors.name}</Text>}
+        <TextInput
+          placeholder="Enter capacity"
+          value={hallData.capacity}
+          keyboardType="numeric"
+          onChangeText={(value) => handleInputChange("capacity", value)}
+          style={styles.input}
+        />
+        {errors.capacity && <Text style={styles.error}>{errors.capacity}</Text>}
+        <TextInput
+          placeholder="Enter phone number"
+          value={hallData.phone}
+          keyboardType="phone-pad"
+          onChangeText={(value) => handleInputChange("phone", value)}
+          style={styles.input}
+        />
+        {errors.phone && <Text style={styles.error}>{errors.phone}</Text>}
+        <TextInput
+          placeholder="Enter description"
+          value={hallData.description}
+          multiline
+          onChangeText={(value) => handleInputChange("description", value)}
+          style={[styles.input, styles.textArea]}
+        />
+        {errors.description && (
+          <Text style={styles.error}>{errors.description}</Text>
+        )}
+      </View>
 
-        const selectedCategories = Object.entries(categories)
-            .filter(([_, value]) => value.selected)
-            .reduce((acc, [key, value]) => {
-                acc[key] = value.price;
-                return acc;
-            }, {});
+      {/* Location */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Location Information</Text>
+        <Picker
+          selectedValue={selectedCity}
+          onValueChange={(value) => {
+            setSelectedCity(value);
+            handleInputChange("city", value);
+          }}
+          style={styles.picker}
+        >
+          <Picker.Item label="Select City" value="" />
+          {westBankCities.map((city) => (
+            <Picker.Item key={city} label={city} value={city} />
+          ))}
+        </Picker>
+        {errors.city && <Text style={styles.error}>{errors.city}</Text>}
+        <MapView
+          style={styles.map}
+          initialRegion={{
+            latitude: 31.9,
+            longitude: 35.2,
+            latitudeDelta: 0.1,
+            longitudeDelta: 0.1,
+          }}
+          onPress={handleMapPress}
+        >
+          <Marker coordinate={markerPosition} />
+        </MapView>
+        <TextInput
+          placeholder="Latitude"
+          value={hallData.latitude}
+          editable={false}
+          style={styles.input}
+        />
+        <TextInput
+          placeholder="Longitude"
+          value={hallData.longitude.toString()}
+          editable={false}
+          style={styles.input}
+        />
+        {errors.location && <Text style={styles.error}>{errors.location}</Text>}
+      </View>
 
-        console.log(selectedCategories)
-        console.log("IMMMMMAAGEEEE  ",image)
-
-
-        const uploadResponse = await fetch(
-            "http://localhost:8080/hallOwner/uploadImageToHall",
-            {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${authCtx.token}`, // Pass the token for authentication
-                },
-                body: imageFormData, // Send formData with images
-            }
-        );
-
-        if (!uploadResponse.ok) {
-            throw new Error("Failed to upload images");
-        }
-
-        const imageUrls = await uploadResponse.text(); // Expect the backend to return a string of image URLs
-
-
-        const newHallData = {
-            name: hallName,
-            location,
-            phone: phoneNumber,
-            capacity: parseInt(capacity, 10),
-            description: about,
-            price: parseFloat(price),
-            longitude: parseFloat(longitude),
-            latitude: parseFloat(latitude),
-            services,
-            categories: selectedCategories,
-            image: imageUrls,
-            proofFile: "fdgdfgfgfdgfdgdfgfdg",
-            hallOwner: {
-                id: userData.id,
-            },
-        };
-
-        console.log("Payload being sent to API:", newHallData);
-
-        try {
-            const response = await axios.post(`${BASE_URL}}/hallOwner/addHall`, newHallData, {
-                headers: {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${authCtx.token}`,
-                },
-            });
-            console.log("API Response:", response.data);
-            Alert.alert("Success", "Hall added successfully!");
-        } catch (error) {
-            console.error("API Error:", error);
-            Alert.alert("Error", "Failed to add hall. Please try again.");
-        }
-    };
-
-    return (
-        <SafeAreaView style={{flex: 1, paddingHorizontal: 10}}>
-            <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                style={{flex: 1}}
+      {/* Services */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Services</Text>
+        {hallData.services.map((service, index) => (
+          <View key={index} style={styles.serviceRow}>
+            <TextInput
+              placeholder="Service Name"
+              value={service.serviceName}
+              onChangeText={(value) =>
+                handleServiceChange(index, "serviceName", value)
+              }
+              style={[styles.input, styles.serviceInput]}
+            />
+            <TextInput
+              placeholder="Service Price"
+              value={service.servicePrice}
+              keyboardType="numeric"
+              onChangeText={(value) =>
+                handleServiceChange(index, "servicePrice", value)
+              }
+              style={[styles.input, styles.serviceInput]}
+            />
+            <TouchableOpacity
+              onPress={() => handleRemoveService(index)}
+              style={styles.removeButton}
             >
-                <ScrollView contentContainerStyle={{flexGrow: 1}}>
-                    <Text style={styles.title}>Add New Hall</Text>
+              <Text style={styles.removeButtonText}>Remove</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+        <Button title="Add Service" onPress={handleAddService} />
+      </View>
 
-                    <TextInput
-                        label="Hall Name"
-                        value={hallName}
-                        onChangeText={setHallName}
-                        style={styles.input}
-                        mode="outlined"
-                    />
+      {/* Categories */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Categories</Text>
+        {["Weddings", "Birthdays", "Meetings", "Parties", "Funerals"].map(
+          (category) => (
+            <View key={category} style={styles.categoryRow}>
+              <Text>{category}</Text>
+              <TextInput
+                placeholder="Enter Price"
+                value={categoryPrices[category]?.toString() || ""}
+                keyboardType="numeric"
+                onChangeText={(value) => handleCategoryChange(category, value)}
+                style={[styles.input, styles.categoryInput]}
+              />
+            </View>
+          )
+        )}
+      </View>
 
-                    <TextInput
-                        label="Location"
-                        value={location}
-                        onChangeText={setLocation}
-                        style={styles.input}
-                        mode="outlined"
-                    />
+      {/* Images */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Upload Images</Text>
+        <Button title="Pick Images" onPress={handlePickImages} />
+        {errors.images && <Text style={styles.error}>{errors.images}</Text>}
+      </View>
 
-                    <TextInput
-                        label="Phone Number"
-                        value={phoneNumber}
-                        onChangeText={setPhoneNumber}
-                        style={styles.input}
-                        mode="outlined"
-                        keyboardType="phone-pad"
-                    />
+      {/* Proof */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Upload Proof of Ownership</Text>
+        <Button title="Pick Proof File" onPress={handlePickProof} />
+        {errors.proofFile && <Text style={styles.error}>{errors.proofFile}</Text>}
+      </View>
 
-                    <TextInput
-                        label="Capacity"
-                        value={capacity.toString()}
-                        onChangeText={(text) => setCapacity(parseInt(text) || 0)}
-                        style={styles.input}
-                        mode="outlined"
-                        keyboardType="numeric"
-                    />
-
-
-                    <TextInput
-                        label="About the Hall"
-                        value={about}
-                        onChangeText={setAbout}
-                        style={styles.textArea}
-                        mode="outlined"
-                        multiline
-                    />
-
-                    <TextInput
-                        label="Price"
-                        value={price.toString()}
-                        onChangeText={(text) => setPrice(parseFloat(text) || 0)}
-                        style={styles.input}
-                        mode="outlined"
-                        keyboardType="numeric"
-                    />
-
-                    <MapView
-                        style={styles.map}
-                        initialRegion={region}
-                        onPress={selectLocationHandler}
-                    >
-                        {selectedLocation && (
-                            <Marker
-                                title="Picked Location"
-                                coordinate={{
-                                    latitude: selectedLocation.lat,
-                                    longitude: selectedLocation.lng,
-                                }}
-                            />
-                        )}
-                    </MapView>
-
-                    <TextInput
-                        label="Longitude"
-                        value={longitude}
-                        onChangeText={setLongitude}
-                        style={styles.input}
-                        mode="outlined"
-                        keyboardType="numeric"
-                    />
-
-                    <TextInput
-                        label="Latitude"
-                        value={latitude}
-                        onChangeText={setLatitude}
-                        style={styles.input}
-                        mode="outlined"
-                        keyboardType="numeric"
-                    />
-
-                    <View style={styles.serviceContainer}>
-                        <Text style={styles.subtitle}>Services</Text>
-                        {Object.entries(services).map(([serviceName, servicePrice], index) => (
-                            <View key={index} style={styles.serviceItem}>
-                                <TextInput
-                                    label="Service Name"
-                                    value={serviceName}
-                                    onChangeText={(text) => handleServiceChange(serviceName, "name", text)}
-                                    style={styles.serviceInput}
-                                    mode="outlined"
-                                />
-                                <TextInput
-                                    label="Service Price"
-                                    value={servicePrice.toString()}
-                                    onChangeText={(text) =>
-                                        handleServiceChange(serviceName, "price", parseFloat(text) || "")
-                                    }
-                                    style={styles.serviceInput}
-                                    mode="outlined"
-                                    keyboardType="numeric"
-                                />
-                                <TouchableOpacity
-                                    style={styles.deleteButton}
-                                    onPress={() => handleDeleteService(serviceName)}
-                                >
-                                    <Text style={styles.deleteButtonText}>❌</Text>
-                                </TouchableOpacity>
-                            </View>
-                        ))}
-                        <Button mode="contained" onPress={handleAddService} style={styles.addServiceButton}>
-                            Add Service
-                        </Button>
-                    </View>
-
-
-
-                    <View style={styles.categoriesContainer}>
-                        <Text style={styles.subtitle}>Categories</Text>
-                        {Object.keys(categories).map((category) => (
-                            <View key={category} style={styles.categoryItem}>
-                                <View
-                                    style={[styles.checkboxWrapper, categories[category].selected && styles.checkboxSelected]}>
-                                    <Checkbox
-                                        status={categories[category].selected ? "checked" : "unchecked"}
-                                        onPress={() =>
-                                            handleCategoryChange(category, !categories[category].selected)
-                                        }
-                                    />
-                                </View>
-
-                                <Text style={styles.categoryLabel}>{category}</Text>
-                                {categories[category].selected && (
-                                    <TextInput
-                                        label="Price"
-                                        value={categories[category].price}
-                                        onChangeText={(price) => handleCategoryPriceChange(category, parseInt(price))}
-                                        style={styles.categoryPriceInput}
-                                        mode="outlined"
-                                        keyboardType="numeric"
-                                    />
-                                )}
-                            </View>
-                        ))}
-                    </View>
-
-                    <Button
-                        mode="outlined"
-                        onPress={handlePickImage}
-                        style={styles.imagePickerButton}
-                        labelStyle={styles.imagePickerButtonText}
-                    >
-                        {image ? "Change Image" : "Pick an Image"}
-                    </Button>
-
-                    {image && <Image source={{uri: image}} style={styles.imagePreview}/>}
-                    <Button
-                        mode="outlined"
-                        onPress={handlePickProofFile}
-                        style={styles.proofPickerButton}
-                        labelStyle={styles.proofPickerButtonText}
-                    >
-                        {proofFile ? "Change Proof File" : "Pick Proof File"}
-                    </Button>
-
-                    <Button mode="contained" onPress={handleSubmit} style={styles.submitButton}>
-                        Submit
-                    </Button>
-                </ScrollView>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
-    );
+      {/* Submit */}
+      <Button title="Submit" onPress={handleSubmit} color="#d9a773" />
+    </ScrollView>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        padding: 16,
-        backgroundColor: "#f4f4f4",
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: "bold",
-        marginBottom: 16,
-        textAlign: "center",
-    },
-    input: {
-        marginBottom: 12,
-        backgroundColor: "#ffffff",
-    },
-    textArea: {
-        marginBottom: 12,
-        backgroundColor: "#ffffff",
-        height: 100,
-    },
-    serviceContainer: {
-        marginVertical: 16,
-    },
-    subtitle: {
-        fontSize: 18,
-        fontWeight: "600",
-        marginBottom: 8,
-    },
-    addButton: {
-        marginTop: 8,
-    },
-    categoriesContainer: {
-        marginVertical: 16,
-    },
-    categoryItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 12,
-    },
-    categoryLabel: {
-        flex: 1,
-        fontSize: 16,
-    },
-    categoryPriceInput: {
-        width: 100,
-        marginLeft: 8,
-        backgroundColor: "#ffffff",
-    },
-    imagePickerButton: {
-        marginVertical: 16,
-    },
-    imagePickerButtonText: {
-        fontSize: 16,
-    },
-    imagePreview: {
-        width: "100%",
-        height: 200,
-        resizeMode: "cover",
-        borderRadius: 8,
-        marginBottom: 16,
-    },
-    proofPickerButton: {
-        marginBottom: 16,
-    },
-    proofPickerButtonText: {
-        fontSize: 16,
-    },
-    submitButton: {
-        marginTop: 24,
-    },
-    checkboxWrapper: {
-        borderWidth: 1,
-        borderColor: "#ccc",
-        borderRadius: 4,
-        padding: 4,
-        marginRight: 8,
-    },
-    checkboxSelected: {
-        borderColor: "d9a773"
-    },
-    serviceItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: 8,
-    },
-    serviceInput: {
-        flex: 1,
-        marginRight: 8,
-        backgroundColor: "#ffffff",
-    },
-    deleteButton: {
-        backgroundColor: "#ffcccc",
-        padding: 8,
-        borderRadius: 4,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    deleteButtonText: {
-        color: "#ff0000",
-        fontSize: 16,
-        fontWeight: "bold",
-    },
-
-    map: {
-        flex: 1,
-    },
-
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: "#f8f8f8",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginVertical: 16,
+  },
+  section: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 8,
+    backgroundColor: "white",
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: "top",
+  },
+  picker: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  map: {
+    height: 200,
+    marginBottom: 8,
+  },
+  serviceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  serviceInput: {
+    flex: 1,
+  },
+  removeButton: {
+    marginLeft: 8,
+    padding: 8,
+    backgroundColor: "#d9534f",
+    borderRadius: 8,
+  },
+  removeButtonText: {
+    color: "white",
+  },
+  categoryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  categoryInput: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  error: {
+    color: "red",
+    fontSize: 12,
+    marginBottom: 8,
+  },
 });
-
-export default AddHallScreen;
