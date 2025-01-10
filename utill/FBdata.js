@@ -75,7 +75,9 @@ export async function fetchHalls(page = 1, size = 10, filterData = {}, searchQue
             price: hall.price,
             longitude: hall.longitude,
             latitude: hall.latitude,
-            categories: hall.categories
+            categories: hall.categories,
+            HallRatings: hall.HallRatings || [] // Include HallRatings in the response
+
         }));
     } catch (error) {
         console.error("Error fetching halls:", error.response?.data || error.message);
@@ -247,13 +249,4 @@ export async function fetchFavoriteHalls(userId, token, page = 1, size = 10) {
         console.error("Error fetching halls:", error.response?.data || error.message);
         throw error;
     }
-}
-
-
-export function updateHall(id, hallsData) {
-    axios.put(backend_url + `/halls/${id}.json`, hallsData);
-}
-
-export function deleteHall(id) {
-    axios.delete(backend_url + `/halls/${id}.json`);
 }

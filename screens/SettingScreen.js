@@ -12,15 +12,17 @@ import {
 } from 'react-native';
 import { AuthContext } from '../store/auth-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useSelector } from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import * as ImagePicker from "expo-image-picker";
 import {BASE_URL} from "../assets/constant/ip";
+import {setUserData, updateUserImage} from '../store/redux/book.js'; // Adjust the path as needed
 
 export function SettingScreen({ navigation }) {
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [language, setLanguage] = useState('en');
     const authCtx = useContext(AuthContext);
     const userData = useSelector((state) => state.bookedHalls.userData);
+    const dispatch = useDispatch();
 
     const toggleDarkMode = () => {
         setIsDarkMode((previousState) => !previousState);
@@ -84,18 +86,26 @@ export function SettingScreen({ navigation }) {
 
                                 if (!result.canceled) {
                                     const uri = result.assets[0].uri;
-                                    const type = result.assets[0].type || "image/jpeg";
-                                    const name = uri.split("/").pop();
+                                    const name = result.assets[0].fileName || uri.split("/").pop();
+                                    const type = "image/jpeg"; // Default MIME type
 
                                     // Step 3: Create FormData
                                     const formData = new FormData();
-                                    formData.append("image", { uri, type, name });
+                                    formData.append("image", {
+                                        uri,
+                                        name,
+                                        type,
+                                    });
 
-                                    console.log("Form Data: ", formData);
-                                    formData._parts.forEach((part) => console.log(part));
+                                    console.log("BASE_URL:", BASE_URL);
+                                    console.log(
+                                        "Request URL:",
+                                        `${BASE_URL}/common/uploadImageToProfile?id=${userData.id}`
+                                    );
+                                    console.log("FormData Parts:", formData._parts);
 
-                                    // Step 4: Upload Image
-                                    const uploadResponse = await fetch(
+                                    // Step 4: Upload the Image
+                                    const response = await fetch(
                                         `${BASE_URL}/common/uploadImageToProfile?id=${userData.id}`,
                                         {
                                             method: "POST",
@@ -106,20 +116,29 @@ export function SettingScreen({ navigation }) {
                                         }
                                     );
 
-                                    if (!uploadResponse.ok) {
-                                        const responseText = await uploadResponse.text();
+                                    if (!response.ok) {
+                                        const responseText = await response.text();
                                         console.error("Backend Error: ", responseText);
-                                        throw new Error(`Failed to upload profile image. Status: ${uploadResponse.status}`);
+                                        throw new Error(
+                                            `Failed to upload profile image. Status: ${response.status}`
+                                        );
                                     }
-
-                                    const responseData = await uploadResponse.json();
 
                                     // Step 5: Update User Data
                                     Alert.alert("Success", "Profile image updated successfully!");
-                                    authCtx.updateUserData({
-                                        ...userData,
-                                        image: responseData.message, // Backend should return the image URL
-                                    });
+                                    const userResponse = await fetch(
+                                        `${BASE_URL}/whitelist/getUser`,
+                                        {
+                                            method: "GET",
+                                            headers: {
+                                                Accept: "*/*",
+                                                Authorization: `Bearer ${authCtx.token}`, // Fixed backticks
+                                            },
+                                        }
+                                    );
+
+                                    const data = await userResponse.json();
+                                    dispatch(setUserData(data));
                                 }
                             } catch (error) {
                                 console.error("Error uploading profile image:", error);
@@ -128,11 +147,7 @@ export function SettingScreen({ navigation }) {
                         }}
                     >
                         <Ionicons name="camera" size={24} color="white" />
-                    </TouchableOpacity>
-
-
-
-
+                    </TouchableOpacity>;
 
                 </View>
                 <Text style={styles.name}>
