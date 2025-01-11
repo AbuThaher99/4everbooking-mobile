@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 16,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: '#f5f5f5', // Light neutral background
     },
     listContainer: {
         paddingBottom: 16,
@@ -178,15 +178,15 @@ const styles = StyleSheet.create({
         padding: 16,
     },
     cardTitle: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
         marginBottom: 8,
-        color: '#333',
+        color: '#2d2d2d', // Darker shade for title
     },
     cardText: {
-        fontSize: 14,
+        fontSize: 16,
         color: '#555',
-        marginBottom: 4,
+        marginBottom: 6,
     },
     label: {
         fontWeight: 'bold',
@@ -194,34 +194,49 @@ const styles = StyleSheet.create({
     },
     servicesContainer: {
         marginTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#ddd',
+        paddingTop: 8,
     },
     serviceText: {
         fontSize: 14,
         color: '#555',
         marginLeft: 8,
+        marginBottom: 4,
     },
     paginationContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginTop: 10,
+        marginTop: 16,
     },
     paginationButton: {
-        padding: 10,
-        backgroundColor: '#007BFF',
-        borderRadius: 5,
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        backgroundColor: '#d9a773', // Button color updated
+        borderRadius: 8,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        elevation: 2,
     },
     disabledButton: {
-        backgroundColor: '#ccc',
+        backgroundColor: '#ccc', // Disabled button color
     },
     paginationText: {
-        color: '#fff',
+        color: '#fff', // White text for better contrast
         fontWeight: 'bold',
+        fontSize: 16,
     },
     paginationInfo: {
         fontSize: 16,
         color: '#333',
     },
+    loader: {
+        marginTop: 20,
+    },
 });
+
 
 export default HallOwnerReservedScreen;

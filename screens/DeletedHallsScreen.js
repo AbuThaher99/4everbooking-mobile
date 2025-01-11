@@ -189,7 +189,7 @@ const DeletedHallsScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: '#f5f5f5',
         padding: 16,
     },
     listContainer: {
@@ -208,37 +208,43 @@ const styles = StyleSheet.create({
     },
     cardImage: {
         width: '100%',
-        height: 180,
+        height: 200,
         resizeMode: 'cover',
     },
     cardContent: {
         padding: 16,
     },
     cardTitle: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
         marginBottom: 8,
-        color: '#333',
+        color: '#2d2d2d',
     },
     cardText: {
-        fontSize: 14,
+        fontSize: 16,
         color: '#555',
-        marginBottom: 8,
+        marginBottom: 6,
     },
     label: {
         fontWeight: 'bold',
         color: '#333',
     },
     restoreButton: {
-        marginTop: 10,
-        paddingVertical: 10,
-        backgroundColor: '#2ecc71',
+        marginTop: 12,
+        paddingVertical: 12,
+        backgroundColor: '#d9a773', // Using the given color for the button
         borderRadius: 8,
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 3,
+        elevation: 2,
     },
     restoreButtonText: {
         color: '#fff',
         fontWeight: 'bold',
+        fontSize: 16,
     },
     paginationContainer: {
         flexDirection: 'row',
@@ -247,27 +253,30 @@ const styles = StyleSheet.create({
         marginTop: 16,
     },
     paginationButton: {
-        padding: 10,
-        marginHorizontal: 5,
+        padding: 12,
+        marginHorizontal: 6,
         borderWidth: 1,
-        borderRadius: 5,
-        borderColor: '#3498db',
+        borderRadius: 8,
+        borderColor: '#d9a773',
         backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 1 },
+        shadowRadius: 2,
+        elevation: 1,
     },
-    paginationButtonActive: {
-        backgroundColor: '#3498db',
+    paginationButtonText: {
+        color: '#d9a773',
+        fontWeight: 'bold',
     },
     paginationButtonDisabled: {
         opacity: 0.5,
-    },
-    paginationButtonText: {
-        color: '#3498db',
-        fontWeight: 'bold',
     },
     paginationInfo: {
         fontSize: 16,
         color: '#333',
     },
 });
+
 
 export default DeletedHallsScreen;

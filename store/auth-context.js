@@ -1,4 +1,5 @@
 import { createContext, useState } from "react";
+import {BASE_URL} from "../assets/constant/ip";
 
 export const AuthContext = createContext({
     token: "",
@@ -22,8 +23,33 @@ function AuthContextProvider({ children }) {
     }
 
     function logout() {
-        setAuthToken(null);
+        fetch(`${BASE_URL}/auth/logout`, {
+            method: 'POST',
+            headers: {
+                Accept: '*/*',
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${authToken}`, // Include token if required
+            },
+            body: JSON.stringify({}), // Adjust if API requires a specific body
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    return response.text().then((text) => {
+                        console.error('Logout Error:', text);
+                        throw new Error('Failed to logout');
+                    });
+                }
+                console.log('Successfully logged out');
+            })
+            .catch((error) => {
+                console.error('Logout API Error:', error.message);
+            })
+            .finally(() => {
+                // Clear the authentication token and perform local logout
+                setAuthToken(null);
+            });
     }
+
 
     const value = {
         token: authToken,

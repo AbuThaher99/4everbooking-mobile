@@ -1,5 +1,5 @@
 import React, {useContext, useEffect, useState} from 'react';
-import {Image, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import {Icon} from 'react-native-elements';
 import {AuthContext} from "../store/auth-context";
 import {useDispatch} from "react-redux";
@@ -28,13 +28,17 @@ export function HallsDetails({route, navigation}) {
     const [selectedServiceList, setSelectedServiceList] = useState({});
     const [selectedPrice, setSelectedPrice] = useState({});
     const [mapKey, setMapKey] = useState(1); // Add state to force re-render
+const [markerPosition, setMarkerPosition] = useState({
+    latitude: latitude,
+    longitude: longitude
+  });
 
     useEffect(() => {
-        if (selected === "About") {
-            setMapKey(prevKey => prevKey + 1); // Force re-render when "About" is selected
-        }
-    }, [selected]);
+            if ( selected === "About") {
+                setMapKey(prevKey => prevKey + 1); // Force re-render when "About" is selected
+            }
 
+    }, [selected]);
     useEffect(() => {
         dispatch(setHallData(route.params));
 
@@ -232,26 +236,18 @@ export function HallsDetails({route, navigation}) {
                     <View>
                         <Text style={styles.About}>{text}</Text>
                         <View style={styles.mapContainer}>
-                            <MapView
-                                key={mapKey} // Use key to trigger re-render
-                                style={styles.map}
-                                provider={PROVIDER_GOOGLE} // Use Google Maps provider
-                                initialRegion={{
-                                    latitude: latitude,
-                                    longitude: longitude,
-                                    latitudeDelta: 0.01,
-                                    longitudeDelta: 0.01,
-                                }}
-                            >
-                                <Marker
-                                    coordinate={{
-                                        latitude: latitude,
-                                        longitude: longitude,
-                                    }}
-                                    title="Hall Location"
-                                    description={location}
-                                />
-                            </MapView>
+                           <MapView
+                                   style={styles.map}
+                                   initialRegion={{
+                                     latitude: latitude,
+                                     longitude: longitude,
+                                     latitudeDelta: 0.1,
+                                     longitudeDelta: 0.1,
+                                   }}
+
+                                 >
+                                   <Marker coordinate={markerPosition} />
+                                 </MapView>
                         </View>
                     </View>
                 )}

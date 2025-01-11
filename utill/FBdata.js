@@ -76,6 +76,7 @@ export async function fetchHalls(page = 1, size = 10, filterData = {}, searchQue
             longitude: hall.longitude,
             latitude: hall.latitude,
             categories: hall.categories,
+            averageRating: hall.averageRating,
             HallRatings: hall.HallRatings || [] // Include HallRatings in the response
 
         }));
@@ -211,13 +212,10 @@ export async function fetchBookedHalls(userId, token, page = 1, size = 10) {
 
 
 
-export async function fetchFavoriteHalls(userId, token, page = 1, size = 10) {
+export async function fetchFavoriteHalls(userId, token, page = 1, size = 3) {
     try {
         const response = await axios.get(`${BASE_URL}/customer/${userId}/favorites`, {
-            params: {
-                page,
-                size,
-            },
+            params: { page, size },
             headers: {
                 Accept: "*/*",
                 Authorization: `Bearer ${token}`,
@@ -225,27 +223,30 @@ export async function fetchFavoriteHalls(userId, token, page = 1, size = 10) {
         });
 
         if (response.status === 200) {
-            return response.data.content.map((hall) => ({
-                id: hall.id,
-                name: hall.name,
-                imageUrl: hall.image.split(",")[0]?.trim(), // Parse the first URL
-                location: hall.location,
-                phoneNumber: hall.phone,
-                services: hall.services,
-                capacity: hall.capacity,
-                description: hall.description,
-                price: hall.price,
-                longitude: hall.longitude,
-                latitude: hall.latitude,
-            }));
-        }
-    } catch (error) {
-        if (error.response?.status === 403) {
-            // Return an empty array if the status is 403
-            return [];
+            return {
+                halls: response.data.content.map((hall) => ({
+                    id: hall.id,
+                    name: hall.name,
+                    imageUrl: hall.image.split(",")[0]?.trim(), // Parse the first URL
+                    location: hall.location,
+                    phoneNumber: hall.phone,
+                    services: hall.services,
+                    capacity: hall.capacity,
+                    description: hall.description,
+                    price: hall.price,
+                    longitude: hall.longitude,
+                    latitude: hall.latitude,
+                    averageRating: hall.averageRating,
+                })),
+                totalPages: response.data.totalPages || 1,
+            };
         }
 
-        // Log and rethrow other errors
+        return { halls: [], totalPages: 1 }; // Return empty if no results
+    } catch (error) {
+        if (error.response?.status === 403) {
+            return { halls: [], totalPages: 1 };
+        }
         console.error("Error fetching halls:", error.response?.data || error.message);
         throw error;
     }
