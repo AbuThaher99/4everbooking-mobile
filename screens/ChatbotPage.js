@@ -8,6 +8,8 @@ import {
     StyleSheet,
     KeyboardAvoidingView,
     Platform,
+    Keyboard,
+    TouchableWithoutFeedback,
 } from "react-native";
 import { useSelector } from "react-redux";
 import axios from "axios";
@@ -16,6 +18,7 @@ import { BASE_URL } from "../assets/constant/ip";
 export default function ChatbotPage() {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState("");
+    const [keyboardVisible, setKeyboardVisible] = useState(false); // Track keyboard visibility
     const userData = useSelector((state) => state.bookedHalls.userData); // Fetch userData from Redux
     const userId = userData?.id; // Extract userId
 
@@ -29,6 +32,21 @@ export default function ChatbotPage() {
         // Clear the timer if the component unmounts
         return () => clearTimeout(timer);
     }, [messages]);
+
+    useEffect(() => {
+        // Add listeners for keyboard events
+        const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+            setKeyboardVisible(true);
+        });
+        const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+            setKeyboardVisible(false);
+        });
+
+        return () => {
+            showSubscription.remove();
+            hideSubscription.remove();
+        };
+    }, []);
 
     const sendMessage = async () => {
         if (!inputMessage.trim()) return; // Prevent empty messages
@@ -83,24 +101,31 @@ export default function ChatbotPage() {
     return (
         <KeyboardAvoidingView
             style={styles.container}
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
         >
-            <FlatList
-                data={messages}
-                renderItem={renderMessageItem}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.chatContainer}
-            />
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View style={styles.inner}>
+                    <FlatList
+                        data={messages}
+                        renderItem={renderMessageItem}
+                        keyExtractor={(item) => item.id}
+                        contentContainerStyle={styles.chatContainer}
+                        inverted // Display the latest messages at the bottom
+                    />
 
-            <View style={styles.inputContainer}>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Type your message..."
-                    value={inputMessage}
-                    onChangeText={setInputMessage}
-                />
-                <Button title="Send" onPress={sendMessage} />
-            </View>
+                    <View style={[styles.inputContainer, keyboardVisible && styles.inputContainerActive]}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Type your message..."
+                            value={inputMessage}
+                            onChangeText={setInputMessage}
+                            onFocus={() => setKeyboardVisible(true)}
+                        />
+                        <Button title="Send" onPress={sendMessage} color="#d9a773" />
+                    </View>
+                </View>
+            </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
     );
 }
@@ -110,14 +135,18 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#f8f8f8",
     },
+    inner: {
+        flex: 1,
+    },
     chatContainer: {
-        padding: 10,
+        paddingHorizontal: 10,
+        paddingBottom: 10,
     },
     messageContainer: {
         marginVertical: 5,
-        padding: 10,
+        padding: 12,
         borderRadius: 8,
-        maxWidth: "80%",
+        maxWidth: "75%",
     },
     userMessage: {
         alignSelf: "flex-end",
@@ -129,6 +158,7 @@ const styles = StyleSheet.create({
     },
     messageText: {
         fontSize: 16,
+        color: "#333",
     },
     inputContainer: {
         flexDirection: "row",
@@ -136,6 +166,11 @@ const styles = StyleSheet.create({
         padding: 10,
         borderTopWidth: 1,
         borderColor: "#ccc",
+        backgroundColor: "#fff",
+    },
+    inputContainerActive: {
+        borderTopColor: "#d9a773",
+        backgroundColor: "#fdfdfd",
     },
     input: {
         flex: 1,
@@ -145,5 +180,6 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         paddingHorizontal: 10,
         marginRight: 10,
+        backgroundColor: "#fff",
     },
 });

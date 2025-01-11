@@ -141,19 +141,19 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: '#f5f5f5', // Light neutral background
     },
     header: {
-        fontSize: 24,
+        fontSize: 26,
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 20,
-        color: '#333',
+        color: '#2d2d2d', // Darker shade for the header text
     },
     infoContainer: {
         marginBottom: 20,
         padding: 15,
-        borderRadius: 8,
+        borderRadius: 10,
         backgroundColor: '#fff',
         shadowColor: '#000',
         shadowOpacity: 0.1,
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '600',
         color: '#555',
         marginBottom: 5,
     },
@@ -173,14 +173,19 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     button: {
-        backgroundColor: '#3498db',
+        backgroundColor: '#d9a773', // Button color for "Generate Report"
         paddingVertical: 15,
-        borderRadius: 8,
+        borderRadius: 10,
         alignItems: 'center',
         marginBottom: 10,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 3,
+        elevation: 2,
     },
     downloadButton: {
-        backgroundColor: '#2ecc71',
+        backgroundColor: '#2ecc71', // Green button for "Download Report"
     },
     buttonText: {
         color: '#fff',
@@ -188,26 +193,35 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     reportLabel: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: 'bold',
         color: '#555',
         marginBottom: 10,
+        textAlign: 'center',
     },
     reportUrl: {
         fontSize: 14,
-        color: '#2980b9',
+        color: '#2980b9', // Blue color for the link
         marginBottom: 20,
         textAlign: 'center',
         textDecorationLine: 'underline',
+        borderWidth: 1, // Border for the link
+        borderColor: '#d9a773', // Using the button's color for consistency
+        borderRadius: 10, // Rounded corners
+        padding: 10, // Padding inside the border
+        backgroundColor: '#fff', // White background for contrast
+        overflow: 'hidden', // Ensures text stays within rounded borders
     },
     errorMessage: {
         textAlign: 'center',
-        color: '#e74c3c',
+        color: '#e74c3c', // Red color for errors
         fontSize: 16,
-    },
-    loader: {
         marginTop: 20,
     },
+    loader: {
+        marginTop: 30,
+    },
+
 });
 
 export default HallOwnerReportScreen;

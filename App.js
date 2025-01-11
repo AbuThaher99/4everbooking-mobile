@@ -41,6 +41,7 @@ import HallOwnerReportScreen from "./screens/HallOwnerReportScreen";
 import DeletedHallsScreen from "./screens/DeletedHallsScreen";
 import UpdateHallScreen from "./screens/UpdateHallScreen";
 import ChatbotPage from "./screens/ChatbotPage";
+import RecommendedHallsScreen from "./screens/RecommendedHallsScreen";
 
 
 const Stack = createNativeStackNavigator();
@@ -111,6 +112,20 @@ function BottomTabNavigator({navigation}) {
                     ),
                 }}/>
             )}
+
+                  {userData?.role === "CUSTOMER" && (
+                    <Tabs.Screen
+                      name="RecommendedHallsScreen"
+                      component={RecommendedHallsScreen}
+                      options={{
+                        tabBarLabel: "Recommended",
+                        tabBarIcon: ({ color, size }) => (
+                          <Icon name="book-outline" color={color} size={size || 20} />
+                        ),
+                      }}
+                    />
+                  )}
+
 
             {userData && userData.role === "HALL_OWNER" && (
                 <>
@@ -220,6 +235,19 @@ function DrawerNavigator({route}) {
                     title: "Home",
                 }}
             />
+
+            {userData?.role === "CUSTOMER" && (
+                <drawerNavigator.Screen
+                    name="favorite"
+                    component={FavoriteScreen}
+                    options={{
+                        title: "Favorite",
+                        drawerIcon: ({ color, size }) => (
+                            <Icon name="star" color={color} size={size || 20} />
+                        ),
+                    }}
+                />
+            )}
 
             {userData && (userData.role === "ADMIN" || userData.role === "SUPER_ADMIN") && (
                 <drawerNavigator.Screen
@@ -564,7 +592,7 @@ export default function App() {
         return (
             <>
                 <StatusBar style="light"/>
-                <StripeProvider publishableKey="">
+                <StripeProvider publishableKey="pk_test_51PluNHFNc7gJPoUc9XnL6UVtt25ebwD23sv8p2JR5tu74vgYjkJ45hDSoyx1OfUF2WJetMUziuq7lJaLk1jH9pny0041T40ceT">
                     <Provider store={store}>
                         <HallContextProvider>
                             <AuthContextProvider>

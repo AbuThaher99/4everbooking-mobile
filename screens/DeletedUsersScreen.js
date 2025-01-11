@@ -173,7 +173,7 @@ const DeletedUsersScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#f9f9f9',
         padding: 16,
     },
     header: {
@@ -181,41 +181,54 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 16,
+        color: '#333',
     },
     card: {
         backgroundColor: '#fff',
-        borderRadius: 8,
+        borderRadius: 10,
         borderWidth: 1,
         borderColor: '#ddd',
         marginBottom: 16,
-        padding: 10,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
     },
     cardHeader: {
-        marginBottom: 10,
+        marginBottom: 12,
     },
     cardHeaderText: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#333',
+        color: '#2d2d2d',
     },
     label: {
-        fontWeight: 'bold',
+        fontWeight: '600',
         color: '#555',
+        marginTop: 4,
     },
     value: {
         color: '#333',
-        marginBottom: 10,
+        marginBottom: 8,
     },
     restoreButton: {
-        backgroundColor: '#4caf50',
-        padding: 10,
-        borderRadius: 5,
-        marginTop: 10,
+        backgroundColor: '#d9a773',
+        padding: 12,
+        borderRadius: 8,
+        marginTop: 12,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
     },
     buttonText: {
         color: '#fff',
-        textAlign: 'center',
         fontWeight: 'bold',
+        fontSize: 16,
     },
     paginationContainer: {
         flexDirection: 'row',
@@ -223,26 +236,37 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
     paginationButton: {
-        padding: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 15,
         marginHorizontal: 5,
         borderWidth: 1,
-        borderColor: '#007BFF',
-        borderRadius: 5,
+        borderColor: '#d9a773',
+        borderRadius: 8,
         backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 1,
     },
     paginationButtonActive: {
-        backgroundColor: '#007BFF',
+        backgroundColor: '#d9a773',
+        borderColor: '#d9a773',
     },
     paginationButtonDisabled: {
         opacity: 0.5,
     },
     paginationButtonText: {
-        color: '#007BFF',
+        color: '#d9a773',
         fontWeight: 'bold',
     },
     paginationButtonTextActive: {
         color: '#fff',
     },
+    loader: {
+        marginTop: 20,
+    },
 });
+
 
 export default DeletedUsersScreen;

@@ -147,7 +147,7 @@ export function SettingScreen({ navigation }) {
                         }}
                     >
                         <Ionicons name="camera" size={24} color="white" />
-                    </TouchableOpacity>;
+                    </TouchableOpacity>
 
                 </View>
                 <Text style={styles.name}>

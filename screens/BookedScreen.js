@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
-import { View, Text, Button, FlatList, StyleSheet } from "react-native";
+import {View, Text, Button, FlatList, StyleSheet, TouchableOpacity} from "react-native";
 import { useIsFocused } from "@react-navigation/native";
 import { AuthContext } from "../store/auth-context";
 import { fetchBookedHalls } from "../utill/FBdata";
@@ -75,20 +75,25 @@ export function BookedScreen() {
                         )}
                     />
                     <View style={styles.pagination}>
-                        <Button
-                            title="Previous"
+                        <TouchableOpacity
+                            style={[styles.button, currentPage === 1 && { opacity: 0.5 }]}
                             onPress={() => changePage(currentPage - 1)}
                             disabled={currentPage === 1}
-                        />
+                        >
+                            <Text style={styles.buttonText}>Previous</Text>
+                        </TouchableOpacity>
                         <Text style={styles.pageIndicator}>
                             Page {currentPage} of {totalPages}
                         </Text>
-                        <Button
-                            title="Next"
+                        <TouchableOpacity
+                            style={[styles.button, currentPage === totalPages && { opacity: 0.5 }]}
                             onPress={() => changePage(currentPage + 1)}
                             disabled={currentPage === totalPages}
-                        />
+                        >
+                            <Text style={styles.buttonText}>Next</Text>
+                        </TouchableOpacity>
                     </View>
+
                 </>
             ) : (
                 <Text style={styles.fallbackText}>No Booked Halls found!</Text>
@@ -101,23 +106,49 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 16,
-        backgroundColor: "#f8f8f8",
+        backgroundColor: "#f5f5f5", // Soft neutral background
     },
     pagination: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginVertical: 10,
+        marginVertical: 16,
+        padding: 10,
+        backgroundColor: "#fff", // White background for contrast
+        borderRadius: 8,
+        shadowColor: "#000",
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 6,
+        elevation: 3,
     },
     pageIndicator: {
         fontSize: 16,
         fontWeight: "bold",
-        color: "#333",
+        color: "#2d2d2d", // Darker text for emphasis
     },
     fallbackText: {
         textAlign: "center",
-        marginTop: 20,
+        marginTop: 30,
+        fontSize: 18,
+        color: "#777", // Subtle color for fallback text
+        fontWeight: "bold",
+    },
+    button: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        backgroundColor: "#d9a773", // Custom button color
+        borderRadius: 8,
+        shadowColor: "#000",
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    buttonText: {
+        color: "#fff",
+        fontWeight: "bold",
+        textAlign: "center",
         fontSize: 16,
-        color: "#555",
     },
 });

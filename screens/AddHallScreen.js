@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {useContext, useState} from "react";
 import {
   View,
   Text,
@@ -13,6 +13,10 @@ import { Picker } from "@react-native-picker/picker";
 import MapView, { Marker } from "react-native-maps";
 import * as ImagePicker from "expo-image-picker";
 import { BASE_URL } from "../assets/constant/ip";
+import DropDownPicker from "react-native-dropdown-picker";
+import { KeyboardAvoidingView, Platform } from "react-native";
+import * as DocumentPicker from "expo-document-picker";
+import {AuthContext} from "../store/auth-context";
 
 export default function AddHallScreen() {
   const [hallData, setHallData] = useState({
@@ -20,12 +24,12 @@ export default function AddHallScreen() {
     capacity: "",
     phone: "",
     description: "",
-    city: "",
-    latitude: "",
-    longitude: "",
+    location: "",
+    latitude: 31.9,
+    longitude: 35.2,
     services: [{ serviceName: "", servicePrice: "" }],
     categories: [],
-    images: [],
+    images: [], // This ensures it's always an array
     proofFile: null,
   });
 
@@ -35,7 +39,20 @@ export default function AddHallScreen() {
     latitude: 31.9,
     longitude: 35.2,
   });
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   const [errors, setErrors] = useState({});
+const [selectedCategories, setSelectedCategories] = useState([]);
+const handleToggleCategory = (category) => {
+  if (selectedCategories.includes(category)) {
+    // Remove category if already selected
+    setSelectedCategories(selectedCategories.filter((c) => c !== category));
+  } else {
+    // Add category to the selected list
+    setSelectedCategories([...selectedCategories, category]);
+  }
+};
+  const authCtx = useContext(AuthContext);
 
   const westBankCities = [
     "Ramallah",
@@ -92,22 +109,44 @@ export default function AddHallScreen() {
     });
 
     if (!result.canceled) {
-      setHallData({
-        ...hallData,
-        images: [...hallData.images, ...result.assets],
-      });
+      setHallData((prevData) => ({
+        ...prevData,
+        images: [...prevData.images, ...result.assets], // Ensure proper merging
+      }));
     }
   };
+
 
   const handlePickProof = async () => {
-    const result = await ImagePicker.launchDocumentAsync({
-      type: "application/pdf",
-    });
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "*/*", // Allows picking any file type
+      });
 
-    if (!result.canceled) {
-      setHallData({ ...hallData, proofFile: result });
+      console.log("Picker Result:", result);
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const file = result.assets[0]; // Access the first file in the assets array
+        setHallData((prevData) => ({
+          ...prevData,
+          proofFile: {
+            uri: file.uri,
+            name: file.name || "proof.pdf",
+            type: file.mimeType || "application/pdf", // Fallback to application/pdf
+          },
+        }));
+        Alert.alert("File Selected", `File Name: ${file.name}`);
+      } else if (result.canceled) {
+        Alert.alert("No file selected.");
+      } else {
+        throw new Error("Invalid file selection response.");
+      }
+    } catch (error) {
+      console.error("Error picking file:", error);
+      Alert.alert("Error", "Failed to pick a file.");
     }
   };
+
 
   const handleCategoryChange = (category, price) => {
     setCategoryPrices({ ...categoryPrices, [category]: price });
@@ -118,7 +157,7 @@ export default function AddHallScreen() {
     if (!hallData.name) errors.name = "Hall name is required.";
     if (!hallData.capacity) errors.capacity = "Capacity is required.";
     if (!hallData.phone) errors.phone = "Phone number is required.";
-    if (!hallData.city) errors.city = "City is required.";
+    if (!hallData.location) errors.location = "Location is required.";
     if (!hallData.latitude || !hallData.longitude)
       errors.location = "Location is required.";
     if (!hallData.images.length) errors.images = "At least one image is required.";
@@ -128,69 +167,147 @@ export default function AddHallScreen() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
+  const handleCityChange = (city) => {
+    setHallData((prevData) => ({
+      ...prevData,
+      location: city, // Update the location with the selected city
+    }));
+  };
 
+
+  const handleSubmit = async () => {
     try {
+      console.log("Images before upload:", hallData.images);
+
       // Upload images
       const imageData = new FormData();
-      hallData.images.forEach((image, index) => {
-        imageData.append("images", {
-          uri: image.uri,
-          name: `image${index}.jpg`,
-          type: "image/jpeg",
+
+      if (Array.isArray(hallData.images)) {
+        hallData.images.forEach((image, index) => {
+          const formattedUri =
+              Platform.OS === "ios" ? image.uri.replace("file://", "") : image.uri;
+
+          // Ensure the key matches the backend's expected parameter
+          imageData.append("images", {
+            uri: formattedUri,
+            name: `image${index}.jpg`,
+            type: image.mimeType || "image/jpeg", // Default to image/jpeg if mimeType is undefined
+          });
         });
-      });
+      } else {
+        console.error("hallData.images is not an array or is undefined");
+        throw new Error("Images are missing or not properly initialized.");
+      }
 
       const imageResponse = await fetch(`${BASE_URL}/hallOwner/uploadImageToHall`, {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${authCtx.token}`,
+        },
         body: imageData,
       });
 
-      if (!imageResponse.ok) throw new Error("Failed to upload images");
+      if (!imageResponse.ok) {
+        const errorText = await imageResponse.text();
+        console.error("Image Upload Error:", errorText);
+        throw new Error("Failed to upload images");
+      }
 
       const imageUrls = await imageResponse.text();
+      console.log("Uploaded Image URLs:", imageUrls);
+
 
       // Upload proof
       const proofData = new FormData();
-      proofData.append("file", {
-        uri: hallData.proofFile.uri,
-        name: "proof.pdf",
-        type: "application/pdf",
-      });
+
+      if (hallData.proofFile) {
+        const formattedProofUri =
+            Platform.OS === "ios"
+                ? hallData.proofFile.uri.replace("file://", "")
+                : hallData.proofFile.uri;
+
+        proofData.append("file", {
+          uri: formattedProofUri,
+          name: hallData.proofFile.name, // Ensure the name matches what the backend expects
+          type: hallData.proofFile.type, // Ensure type is passed
+        });
+      } else {
+        throw new Error("Proof file is missing");
+      }
 
       const proofResponse = await fetch(`${BASE_URL}/hallOwner/uploadFileProof`, {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${authCtx.token}`, // Include the token if needed
+        },
         body: proofData,
       });
 
-      if (!proofResponse.ok) throw new Error("Failed to upload proof file");
+      if (!proofResponse.ok) {
+        const errorText = await proofResponse.text();
+        console.error("Proof Upload Error:", errorText);
+        throw new Error("Failed to upload proof file");
+      }
 
       const proofUrl = await proofResponse.text();
-
+      console.log("Uploaded Proof URL:", proofUrl);
+      console.log("Hall Data:", hallData);
       // Submit hall
       const hallPayload = {
-        ...hallData,
-        categories: categoryPrices,
-        images: imageUrls,
-        proofFile: proofUrl,
+        name: hallData.name,
+        capacity: parseInt(hallData.capacity, 10), // Ensure it's a number
+        phone: hallData.phone,
+        description: hallData.description,
+        location: hallData.location,
+        latitude: hallData.latitude,
+        longitude: hallData.longitude,
+        hallOwner: { id: 1 }, // Replace with dynamic ID if applicable
+        services: hallData.services.reduce((acc, service) => {
+          if (service.serviceName && service.servicePrice) {
+            acc[service.serviceName] = parseFloat(service.servicePrice);
+          }
+          return acc;
+        }, {}), // Convert services to a map
+        categories: Object.fromEntries(
+            Object.entries(categoryPrices).map(([key, value]) => [key.toUpperCase(), parseFloat(value)])
+        ), // Convert categories to a map with uppercase keys
+        image: imageUrls, // Assume `imageUrls` is a comma-separated string from backend response
+        proofFile: proofUrl, // Assume `proofUrl` is from proof file upload
       };
+
 
       const hallResponse = await fetch(`${BASE_URL}/hallOwner/addHall`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authCtx.token}`,
+        },
         body: JSON.stringify(hallPayload),
       });
 
-      if (!hallResponse.ok) throw new Error("Failed to create hall");
+      if (!hallResponse.ok) {
+        const errorText = await hallResponse.text();
+        console.error("Hall Creation Error:", errorText);
+        throw new Error("Failed to create hall");
+      }
 
       Alert.alert("Success", "Hall created successfully!");
+      navigator.replace("MyHalls");
     } catch (error) {
+      console.error("Error in handleSubmit:", error.message);
       Alert.alert("Error", error.message);
     }
   };
 
+
+
+
   return (
+  <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={80}
+    >
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Add a New Hall</Text>
 
@@ -235,25 +352,34 @@ export default function AddHallScreen() {
       {/* Location */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Location Information</Text>
-        <Picker
-          selectedValue={selectedCity}
-          onValueChange={(value) => {
-            setSelectedCity(value);
-            handleInputChange("city", value);
-          }}
-          style={styles.picker}
-        >
-          <Picker.Item label="Select City" value="" />
-          {westBankCities.map((city) => (
-            <Picker.Item key={city} label={city} value={city} />
-          ))}
-        </Picker>
-        {errors.city && <Text style={styles.error}>{errors.city}</Text>}
+   <View style={{ zIndex: 1000, marginBottom: 16 }}>
+     <DropDownPicker
+         open={isDropdownOpen}
+         value={selectedCity}
+         items={westBankCities.map((city) => ({
+           label: city,
+           value: city,
+         }))}
+         setOpen={setIsDropdownOpen}
+         setValue={(callback) => {
+           const newValue = callback(selectedCity); // Get the new value
+           setSelectedCity(newValue); // Update the selected city
+           handleCityChange(newValue); // Update the hallData object
+         }}
+         placeholder="Select City"
+         style={styles.dropDownPicker}
+         dropDownContainerStyle={styles.dropDownPickerContainer}
+         listMode="SCROLLVIEW"
+     />
+
+     {errors.city && <Text style={styles.error}>{errors.city}</Text>}
+   </View>
+
         <MapView
           style={styles.map}
           initialRegion={{
-            latitude: 31.9,
-            longitude: 35.2,
+            latitude: markerPosition.latitude,
+            longitude: markerPosition.longitude,
             latitudeDelta: 0.1,
             longitudeDelta: 0.1,
           }}
@@ -263,7 +389,7 @@ export default function AddHallScreen() {
         </MapView>
         <TextInput
           placeholder="Latitude"
-          value={hallData.latitude}
+          value={hallData.latitude.toString()}
           editable={false}
           style={styles.input}
         />
@@ -309,24 +435,38 @@ export default function AddHallScreen() {
         <Button title="Add Service" onPress={handleAddService} />
       </View>
 
-      {/* Categories */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Categories</Text>
-        {["Weddings", "Birthdays", "Meetings", "Parties", "Funerals"].map(
-          (category) => (
-            <View key={category} style={styles.categoryRow}>
-              <Text>{category}</Text>
-              <TextInput
-                placeholder="Enter Price"
-                value={categoryPrices[category]?.toString() || ""}
-                keyboardType="numeric"
-                onChangeText={(value) => handleCategoryChange(category, value)}
-                style={[styles.input, styles.categoryInput]}
-              />
-            </View>
-          )
-        )}
-      </View>
+   {/* Categories */}
+   <View style={styles.section}>
+     <Text style={styles.sectionTitle}>Categories</Text>
+     {["Weddings", "Birthdays", "Meetings", "Parties", "Funerals"].map(
+       (category) => (
+         <View key={category} style={styles.categoryRow}>
+           <TouchableOpacity
+             onPress={() => handleToggleCategory(category)}
+             style={[
+               styles.checkbox,
+               selectedCategories.includes(category) && styles.checkboxSelected,
+             ]}
+           >
+             {selectedCategories.includes(category) && (
+               <Text style={styles.checkIcon}>✔️</Text>
+             )}
+           </TouchableOpacity>
+           <Text style={styles.categoryLabel}>{category}</Text>
+           <TextInput
+             placeholder="Price"
+             value={categoryPrices[category]?.toString() || ""}
+             keyboardType="numeric"
+             onChangeText={(value) => handleCategoryChange(category, value)}
+             style={[styles.input, styles.categoryInput]}
+             editable={selectedCategories.includes(category)} // Only editable if category is selected
+           />
+         </View>
+       )
+     )}
+   </View>
+
+
 
       {/* Images */}
       <View style={styles.section}>
@@ -335,16 +475,20 @@ export default function AddHallScreen() {
         {errors.images && <Text style={styles.error}>{errors.images}</Text>}
       </View>
 
-      {/* Proof */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Upload Proof of Ownership</Text>
-        <Button title="Pick Proof File" onPress={handlePickProof} />
-        {errors.proofFile && <Text style={styles.error}>{errors.proofFile}</Text>}
-      </View>
+           <Text style={styles.sectionTitle}>Proof of Ownership</Text>
+           <Button title="Pick Proof File" onPress={handlePickProof} />
+           {hallData.proofFile && (
+             <Text style={styles.fileInfo}>File: {hallData.proofFile.name}</Text>
+           )}
+         </View>
+
 
       {/* Submit */}
       <Button title="Submit" onPress={handleSubmit} color="#d9a773" />
     </ScrollView>
+      </KeyboardAvoidingView>
+
   );
 }
 
@@ -352,75 +496,134 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: "#f8f8f8",
+    backgroundColor: "#ffffff",
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
     textAlign: "center",
-    marginVertical: 16,
+    marginVertical: 20,
+    color: "#2d2d2d",
   },
   section: {
-    marginBottom: 16,
+    marginBottom: 20,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 8,
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#444",
+    marginBottom: 12,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#ddd",
     borderRadius: 8,
-    padding: 8,
-    marginBottom: 8,
-    backgroundColor: "white",
+    padding: 12,
+    marginBottom: 12,
+    backgroundColor: "#fff",
+    fontSize: 16,
+    color: "#333",
   },
   textArea: {
-    height: 100,
+    height: 120,
     textAlignVertical: "top",
-  },
-  picker: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    marginBottom: 8,
   },
   map: {
     height: 200,
-    marginBottom: 8,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  dropDownPicker: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    backgroundColor: "#fff",
+    marginBottom: 12,
+  },
+  dropDownPickerContainer: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    backgroundColor: "#fff",
   },
   serviceRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 12,
   },
   serviceInput: {
     flex: 1,
+    marginRight: 8,
   },
   removeButton: {
-    marginLeft: 8,
-    padding: 8,
-    backgroundColor: "#d9534f",
+    backgroundColor: "#ff6f61",
+    padding: 10,
     borderRadius: 8,
   },
   removeButtonText: {
-    color: "white",
+    color: "#fff",
+    fontSize: 14,
   },
   categoryRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
+    marginBottom: 12,
   },
   categoryInput: {
     flex: 1,
-    marginLeft: 8,
+    marginLeft: 12,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 10,
+    backgroundColor: "#fff",
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: "#ccc",
+    borderRadius: 4,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+    backgroundColor: "white",
+  },
+  checkboxSelected: {
+    backgroundColor: "#4caf50",
+    borderColor: "#388e3c",
+  },
+  checkIcon: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  fileInfo: {
+    fontSize: 14,
+    color: "#777",
+    marginTop: 8,
   },
   error: {
-    color: "red",
+    color: "#e53935",
     fontSize: 12,
     marginBottom: 8,
+  },
+  button: {
+    backgroundColor: "#6c63ff",
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
   },
 });

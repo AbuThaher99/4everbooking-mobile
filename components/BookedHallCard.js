@@ -148,46 +148,53 @@ const BookedHallCard = ({ hall, onRateHall }) => {
 
 const styles = StyleSheet.create({
     card: {
-        backgroundColor: "#fff",
-        borderRadius: 8,
+        backgroundColor: "#ffffff",
+        borderRadius: 12,
         padding: 16,
         marginVertical: 8,
         shadowColor: "#000",
         shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 2,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 6,
+        elevation: 3,
     },
     title: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: "bold",
-        marginBottom: 8,
+        color: "#2d2d2d",
+        marginBottom: 10,
     },
     text: {
-        fontSize: 14,
+        fontSize: 16,
         color: "#555",
-        marginBottom: 4,
+        marginBottom: 6,
     },
     label: {
         fontWeight: "bold",
         color: "#333",
     },
     servicesContainer: {
-        marginTop: 8,
+        marginTop: 12,
         borderTopWidth: 1,
         borderTopColor: "#ddd",
         paddingTop: 8,
     },
     button: {
-        marginTop: 12,
-        paddingVertical: 10,
+        marginTop: 16,
+        paddingVertical: 12,
         borderRadius: 8,
         alignItems: "center",
+        shadowColor: "#000",
+        shadowOpacity: 0.1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        elevation: 2,
     },
     buttonEnabled: {
-        backgroundColor: "#28a745",
+        backgroundColor: "#d9a773", // Green for enabled button
     },
     buttonDisabled: {
-        backgroundColor: "#ccc",
+        backgroundColor: "#ccc", // Gray for disabled button
     },
     buttonText: {
         color: "#fff",
@@ -198,22 +205,25 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "rgba(0,0,0,0.5)",
+        backgroundColor: "rgba(0, 0, 0, 0.5)", // Semi-transparent black background
     },
     modalContent: {
-        width: "80%",
-        backgroundColor: "#fff",
-        borderRadius: 8,
+        width: "85%",
+        backgroundColor: "#ffffff",
+        borderRadius: 12,
         padding: 20,
         shadowColor: "#000",
         shadowOpacity: 0.2,
-        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 8,
         elevation: 5,
     },
     modalTitle: {
-        fontSize: 18,
+        fontSize: 22,
         fontWeight: "bold",
-        marginBottom: 16,
+        color: "#2d2d2d",
+        marginBottom: 20,
+        textAlign: "center",
     },
     starContainer: {
         flexDirection: "row",
@@ -221,21 +231,25 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     star: {
-        marginHorizontal: 4,
+        marginHorizontal: 6,
     },
     input: {
         borderWidth: 1,
-        borderColor: "#ccc",
-        borderRadius: 8,
-        padding: 10,
-        marginBottom: 12,
+        borderColor: "#ddd",
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 16,
+        fontSize: 16,
+        backgroundColor: "#f9f9f9", // Slight background color for input
     },
     textArea: {
-        height: 80,
+        height: 100,
+        textAlignVertical: "top", // Align text at the top
     },
     modalActions: {
         flexDirection: "row",
         justifyContent: "space-between",
+        marginTop: 20,
     },
 });
 
