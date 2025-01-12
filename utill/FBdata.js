@@ -3,6 +3,7 @@ import {BASE_URL} from "../assets/constant/ip";
 import {useContext} from "react";
 import {AuthContext} from "../store/auth-context";
 import * as Location from 'expo-location';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const backend_url =
     "https://react-native-program-574db-default-rtdb.firebaseio.com/";
@@ -28,8 +29,9 @@ export async function storeBookedHalls(HallsData) {
     return response.data.name;
 }
 
+
 // Dynamically handle empty filters
-export async function fetchHalls(page = 1, size = 10, filterData = {}, searchQuery, userId) {
+export async function fetchHalls(page = 1, size = 3, filterData = {}, searchQuery, userId) {
 
     const {
         priceRange = [0, 10000000],
@@ -42,7 +44,8 @@ export async function fetchHalls(page = 1, size = 10, filterData = {}, searchQue
     const [minPrice, maxPrice] = priceRange;
     const [minCapacity, maxCapacity] = capacityRange;
     const selectedSort = selectedType?.value;
-
+    let longitude = await AsyncStorage.getItem('longitude');
+    let latitude = await AsyncStorage.getItem('latitude');
     const params = {
         page,
         size,
@@ -58,16 +61,20 @@ export async function fetchHalls(page = 1, size = 10, filterData = {}, searchQue
         sortByPrice: selectedSort === "SortByPrice",
         radius: selectedSort === "SortByLocation" ? 15 : null,
         userId: selectedSort === "SortByRecommendation" ? userId : null,
+        longitude: longitude ? parseFloat(longitude) : null,
+        latitude: latitude ? parseFloat(latitude) : null,
     };
 
     console.log("Request Params Before Geolocation:", params);
 
     try {
-        if (selectedSort === "SortByLocation") {
+        console.log("long", params.longitude);
+        console.log("lat", params.latitude);
+        if (selectedSort === "SortByLocation" && params.longitude ===null && params.latitude===null) {
             console.log("Fetching halls by location...");
 
             // Request Location Permissions
-            const { status } = await Location.requestForegroundPermissionsAsync();
+            const {status} = await Location.requestForegroundPermissionsAsync();
             if (status !== "granted") {
                 console.error("Location permission denied.");
                 throw new Error("Location permission not granted.");
@@ -78,23 +85,17 @@ export async function fetchHalls(page = 1, size = 10, filterData = {}, searchQue
                 accuracy: Location.Accuracy.High,
             });
 
-            const { latitude, longitude } = location.coords;
+            const {latitude, longitude} = location.coords;
             params.latitude = latitude;
             params.longitude = longitude;
+            // Save the location to AsyncStorage for future use
+            await AsyncStorage.setItem('latitude', latitude.toString());
+            await AsyncStorage.setItem('longitude', longitude.toString());
+
 
             console.log("Updated Params After Geolocation:", params);
 
-            // Fetch Halls with Location
-            const response = await axios.get(`${BASE_URL}/whitelist/getAll`, {
-                params,
-                headers: {
-                    Accept: "*/*",
-                },
-            });
-
-            console.log("API Response (Proximity):", response.data);
-            return response.data.content.map(formatHallData);
-        } else {
+        }
             // Fetch Halls Without Location
             const response = await axios.get(`${BASE_URL}/whitelist/getAll`, {
                 params,
@@ -103,8 +104,10 @@ export async function fetchHalls(page = 1, size = 10, filterData = {}, searchQue
                 },
             });
             console.log("user id", userId);
-            return response.data.content.map(formatHallData);
-        }
+            return {
+                halls: response.data.content.map(formatHallData),
+                totalPages: response.data.totalPages || 1, // Include totalPages from the API response
+            };
     } catch (error) {
         console.error("Error Fetching Halls:", error.response?.data || error.message);
         throw error;

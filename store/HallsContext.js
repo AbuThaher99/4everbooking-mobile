@@ -14,7 +14,11 @@ function HallsReducer(state, action) {
         case "ADD":
             return [action.payload, ...state];
         case "SET":
-            const inverted = action.payload.reverse();
+            if (!Array.isArray(action.payload)) {
+                console.error("SET action payload is not an array:", action.payload);
+                return state; // Return the current state if the payload is invalid
+            }
+            const inverted = [...action.payload].reverse(); // Clone and reverse the array
             return inverted;
         case "UPDATE":
             const updatableHallIndex = state.findIndex(

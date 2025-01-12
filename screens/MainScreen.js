@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
-import { View, Pressable, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons"; // For the filter icon
+import { View, Pressable, StyleSheet, Button, Text } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { HallsContext } from "../store/HallsContext";
 import { fetchHalls } from "../utill/FBdata";
 import LoadingOverlay from "../components/ui/LoadingOverlay";
@@ -8,61 +8,72 @@ import HallsOutput from "../components/ui/HallsOutpup";
 import { AuthContext } from "../store/auth-context";
 import { useIsFocused } from "@react-navigation/native";
 import { useSelector } from "react-redux";
+import * as Location from "expo-location";
 
-function MainScreen({ navigation, route }) {
-    React.useEffect(() => {
-        navigation.setParams({ activeTab: "Home" });
-    }, [navigation]);
-
+function MainScreen({ navigation }) {
     const hallsCtx = useContext(HallsContext);
-    const [isFetching, setIsFetching] = useState(false);
     const authCtx = useContext(AuthContext);
     const isFocused = useIsFocused();
+
+    const [isFetching, setIsFetching] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const [filterData, setFilterData] = useState({});
     const [searchQuery, setSearchQuery] = useState("");
+    const [userLocation, setUserLocation] = useState(null);
+
     const searchQuerySelector = useSelector((state) => state.bookedHalls.searchQuery);
     const userData = useSelector((state) => state.bookedHalls.userData);
 
-    console.log("Search query from redux:", filterData.selectedType);
-    // Update search query and clear filter when searchQuerySelector is cleared
     useEffect(() => {
         if (!searchQuerySelector) {
-            setFilterData({}); // Reset filter data when query is cleared
+            setFilterData({});
         }
         setSearchQuery(searchQuerySelector);
     }, [searchQuerySelector]);
 
-    // Fetch halls when filterData or searchQuery changes
     useEffect(() => {
         async function getHalls() {
             setIsFetching(true);
 
-            // Only use filterData and searchQuery if they are valid
             const updatedFilterData = Object.keys(filterData).length ? filterData : {};
             const updatedSearchQuery = searchQuery.trim();
 
-            const halls = await fetchHalls(1, 10, updatedFilterData, updatedSearchQuery,userData.id);
+            try {
+                const { halls, totalPages } = await fetchHalls(
+                    currentPage,
+                    3,
+                    updatedFilterData,
+                    updatedSearchQuery,
+                    userData.id,
 
-            console.log("API called with filterData:", updatedFilterData, "searchQuery:", updatedSearchQuery);
+                );
 
-            setIsFetching(false);
-            hallsCtx.setHall(halls);
+                console.log("Fetched halls:", halls);
+                console.log("Total pages:", totalPages);
+
+                hallsCtx.setHall(halls); // Pass only halls to the context
+                setTotalPages(totalPages); // Update the totalPages state
+            } catch (error) {
+                console.error("Error fetching halls:", error.message);
+            } finally {
+                setIsFetching(false);
+            }
         }
 
         getHalls();
-    }, [filterData, searchQuery]);
+    }, [filterData, searchQuery, currentPage]);
 
-    // Reset booked state when screen is focused
     useEffect(() => {
         if (isFocused) {
             authCtx.setBooked(false);
         }
     }, [isFocused]);
 
-    // Handle filter application
+
     const handleFilterApply = (data) => {
         setFilterData(data);
-        console.log("Filter applied with data:", data); // Logs the new filter data correctly
+        setCurrentPage(1); // Reset to the first page when filter changes
     };
 
     if (isFetching) {
@@ -76,19 +87,34 @@ function MainScreen({ navigation, route }) {
                 fallbackText="No halls found based on the applied filters!"
             />
 
+            <View style={styles.paginationContainer}>
+                <Button
+                    title="Previous"
+                    onPress={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                />
+                <Text style={styles.pageText}>
+                    Page {currentPage} of {totalPages}
+                </Text>
+                <Button
+                    title="Next"
+                    onPress={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                />
+            </View>
+
             <Pressable
                 style={({ pressed }) => [
                     styles.floatingButton,
                     pressed ? styles.pressedButton : null,
                 ]}
-                onPress={() => {
-                    navigation.navigate("Filter", { onApply: handleFilterApply });
-                }}
+                onPress={() => navigation.navigate("Filter", { onApply: handleFilterApply })}
             >
                 <Ionicons name="options" size={24} color="white" />
             </Pressable>
         </View>
     );
+
 }
 
 export default MainScreen;
@@ -97,21 +123,34 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    paginationContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginVertical: 10,
+        marginHorizontal: 20,
+        marginBottom: 20, // Add bottom margin to avoid overlapping
+    },
+    pageText: {
+        fontSize: 16,
+        fontWeight: "bold",
+        marginBottom: 10,
+    },
     floatingButton: {
         position: "absolute",
-        bottom: 20, // Distance from the bottom
-        right: 20, // Distance from the right
-        backgroundColor: "#d9a773", // Button background color
-        borderRadius: 30, // Round shape
-        width: 50, // Button size
-        height: 50, // Button size
+        bottom: 90, // Adjust position to avoid overlapping
+        right: 20, // Keep it aligned to the right
+        backgroundColor: "#d9a773",
+        borderRadius: 30,
+        width: 50,
+        height: 50,
         justifyContent: "center",
-        alignItems: "center", // Center the icon
+        alignItems: "center",
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.5,
         shadowRadius: 2,
-        elevation: 5, // For Android shadow
+        elevation: 5,
     },
     pressedButton: {
         opacity: 0.5,
