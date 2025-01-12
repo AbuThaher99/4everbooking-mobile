@@ -21,6 +21,8 @@ function MainScreen({ navigation, route }) {
     const [filterData, setFilterData] = useState({});
     const [searchQuery, setSearchQuery] = useState("");
     const searchQuerySelector = useSelector((state) => state.bookedHalls.searchQuery);
+    const userData = useSelector((state) => state.bookedHalls.userData);
+
     console.log("Search query from redux:", filterData.selectedType);
     // Update search query and clear filter when searchQuerySelector is cleared
     useEffect(() => {
@@ -39,7 +41,7 @@ function MainScreen({ navigation, route }) {
             const updatedFilterData = Object.keys(filterData).length ? filterData : {};
             const updatedSearchQuery = searchQuery.trim();
 
-            const halls = await fetchHalls(1, 10, updatedFilterData, updatedSearchQuery);
+            const halls = await fetchHalls(1, 10, updatedFilterData, updatedSearchQuery,userData.id);
 
             console.log("API called with filterData:", updatedFilterData, "searchQuery:", updatedSearchQuery);
 
