@@ -7,7 +7,7 @@ import {
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
-import { Button } from 'react-native-paper';
+import { Button, RadioButton } from 'react-native-paper';
 import { Chip } from 'react-native-paper';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
 
@@ -38,6 +38,8 @@ export function FilterScreen({ navigation, route }) {
         section2: null,
         priceRange: [500, 5000],
         capacityRange: [10, 1000],
+        selectedType: null, // For checkbox selection
+
     });
     const { onApply } = route.params;
 
@@ -59,6 +61,19 @@ export function FilterScreen({ navigation, route }) {
         setSelectedChips((prevState) => ({
             ...prevState,
             capacityRange: values,
+        }));
+    };
+    const handleSortChange = (value, label) => {
+        setSelectedChips((prevState) => ({
+            ...prevState,
+            selectedType: { value, label },
+        }));
+    };
+
+    const handleTypeChange = (type) => {
+        setSelectedChips((prevState) => ({
+            ...prevState,
+            selectedType: type,
         }));
     };
 
@@ -156,6 +171,41 @@ export function FilterScreen({ navigation, route }) {
                     />
                 </View>
 
+                <Text style={styles.sectionTitle}>Choose Type</Text>
+                <RadioButton.Group
+                    onValueChange={(value) => {
+                        // Find the corresponding label for the selected value
+                        const labelMap = {
+                            sortByPrice: 'Sort by Price',
+                            sortByLocation: 'Sort by Location',
+                            sortByRecommended: 'Sort by Recommended',
+                        };
+                        handleSortChange(value, labelMap[value]);
+                    }}
+                    value={selectedChips.selectedType?.value} // Ensure this handles only the value
+                >
+                    <View style={styles.radioButtonContainer}>
+                        <RadioButton.Item
+                            label="Sort by Price"
+                            value={"SortByPrice"}
+                            onPress={() => handleSortChange("SortByPrice", "Sort by Price")}
+
+                        />
+                        <RadioButton.Item
+                            label="Sort by Location"
+                            value={"SortByLocation"}
+                            onPress={() => handleSortChange("SortByLocation", "Sort by Location")}
+
+                        />
+                        <RadioButton.Item
+                            label="Sort by Recommended"
+                            value={"SortByRecommended"}
+                            onPress={() => handleSortChange("SortByRecommended", "Sort by Recommended")}
+
+                        />
+                    </View>
+                </RadioButton.Group>
+
                 <Button style={styles.applyButton} onPress={applyFilters} mode="contained">
                     Apply
                 </Button>
@@ -224,6 +274,9 @@ const styles = StyleSheet.create({
     },
     trackStyle: {
         height: 4,
+    },
+    radioButtonContainer: {
+        marginBottom: 20,
     },
     applyButton: {
         marginBottom: 20,

@@ -42,12 +42,17 @@ import DeletedHallsScreen from "./screens/DeletedHallsScreen";
 import UpdateHallScreen from "./screens/UpdateHallScreen";
 import ChatbotPage from "./screens/ChatbotPage";
 import RecommendedHallsScreen from "./screens/RecommendedHallsScreen";
+import {EditProfileScreen} from "./screens/EditProfileScreen";
+import Ionicons from "react-native-vector-icons/Ionicons";
+
 
 
 const Stack = createNativeStackNavigator();
 const drawerNavigator = createDrawerNavigator();
 const Tabs = createBottomTabNavigator();
 const Drawer = createDrawerNavigator(); // Initialize the Drawer navigator
+const SettingsStack = createNativeStackNavigator();
+
 const OwnersHallsStack = () => {
     return (
         <Stack.Navigator>
@@ -64,7 +69,22 @@ const OwnersHallsStack = () => {
         </Stack.Navigator>
     );
 };
-
+function SettingsStackNavigator() {
+    return (
+        <SettingsStack.Navigator>
+            <SettingsStack.Screen
+                name="SettingsMain"
+                component={SettingScreen}
+                options={{ headerTitle: 'Settings' }}
+            />
+            <SettingsStack.Screen
+                name="EditProfile"
+                component={EditProfileScreen}
+                options={{ headerTitle: 'Edit Profile' }}
+            />
+        </SettingsStack.Navigator>
+    );
+}
 function AuthStack() {
     return (
         <>
@@ -113,24 +133,24 @@ function BottomTabNavigator({navigation}) {
                 }}/>
             )}
 
-                  {userData?.role === "CUSTOMER" && (
-                    <Tabs.Screen
-                      name="RecommendedHallsScreen"
-                      component={RecommendedHallsScreen}
-                      options={{
+            {userData?.role === "CUSTOMER" && (
+                <Tabs.Screen
+                    name="RecommendedHallsScreen"
+                    component={RecommendedHallsScreen}
+                    options={{
                         tabBarLabel: "Recommended",
                         tabBarIcon: ({ color, size }) => (
-                          <Icon name="book-outline" color={color} size={size || 20} />
+                            <Icon name="heart-outline" color={color} size={size || 20} /> // New Icon Name
                         ),
-                      }}
-                    />
-                  )}
+                    }}
+                />
+            )}
 
 
             {userData && userData.role === "HALL_OWNER" && (
                 <>
                     <Tabs.Screen
-                        name="MyHallsStack"
+                        name="MyHalls"
                         component={OwnersHallsStack}
                         options={{
                             tabBarIcon: ({ color }) => <Icon name={'bookmark'} color={color} size={20} />,
@@ -161,13 +181,15 @@ function BottomTabNavigator({navigation}) {
                     }}/>
             )}
 
-            <Tabs.Screen name="Settings" component={SettingScreen} options={{
-                tabBarIcon: ({color}) => (
-                    <Icon name={'settings-outline'} color={color}
-                          size={20}/>
-                ),
-            }}/>
-
+            <Tabs.Screen
+                name="Settings"
+                component={SettingsStackNavigator} // This includes EditProfileScreen
+                options={{
+                    tabBarIcon: ({ color }) => (
+                        <Icon name={'settings-outline'} color={color} size={20} />
+                    ),
+                }}
+            />
         </Tabs.Navigator>
     );
 }
@@ -255,7 +277,7 @@ function DrawerNavigator({route}) {
                     component={MangeUserScreen}
                     options={{
                         drawerIcon: ({color}) => (
-                            <Icon name="exit" color={color} size={20}/>
+                            <Ionicons name="people-outline" color={color} size={20} /> // New Icon
                         ),
                     }}
                 />
@@ -267,7 +289,7 @@ function DrawerNavigator({route}) {
                     component={AdminHallApprovalScreen}
                     options={{
                         drawerIcon: ({color}) => (
-                            <Icon name="exit" color={color} size={20}/>
+                            <Ionicons name="checkmark-done-outline" color={color} size={20} /> // New Icon
                         ),
                     }}
                 />
@@ -299,7 +321,7 @@ function DrawerNavigator({route}) {
                     component={HallOwnerReservedScreen}
                     options={{
                         drawerIcon: ({color}) => (
-                            <Icon name="exit" color={color} size={20}/>
+                            <Icon name="calendar-outline" color={color} size={20}/>
                         ),
                     }}
                 />
@@ -323,7 +345,7 @@ function DrawerNavigator({route}) {
                     component={ChatbotPage}
                     options={{
                         drawerIcon: ({color}) => (
-                            <Icon name="exit" color={color} size={20}/>
+                            <Icon name="chatbubbles-outline" color={color} size={20}/>
                         ),
                     }}
                 />

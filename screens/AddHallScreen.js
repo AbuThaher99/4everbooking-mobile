@@ -17,6 +17,7 @@ import DropDownPicker from "react-native-dropdown-picker";
 import { KeyboardAvoidingView, Platform } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import {AuthContext} from "../store/auth-context";
+import {useSelector} from "react-redux";
 
 export default function AddHallScreen() {
   const [hallData, setHallData] = useState({
@@ -53,6 +54,7 @@ const handleToggleCategory = (category) => {
   }
 };
   const authCtx = useContext(AuthContext);
+  const userData = useSelector((state) => state.bookedHalls.userData);
 
   const westBankCities = [
     "Ramallah",
@@ -252,6 +254,24 @@ const handleToggleCategory = (category) => {
       const proofUrl = await proofResponse.text();
       console.log("Uploaded Proof URL:", proofUrl);
       console.log("Hall Data:", hallData);
+      const response = await fetch(
+          `${BASE_URL}/hallOwner/getHallOwnerByUserId/${userData.id}`,
+          {
+            headers: {
+              accept: "*/*",
+              Authorization: `Bearer ${authCtx.token}`,
+            },
+          }
+      );
+
+      const rawData = await response.text();
+      const data = rawData ? JSON.parse(rawData) : {};
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch hall owner data. Status: ${response.status}`);
+      }
+
+
       // Submit hall
       const hallPayload = {
         name: hallData.name,
@@ -261,7 +281,7 @@ const handleToggleCategory = (category) => {
         location: hallData.location,
         latitude: hallData.latitude,
         longitude: hallData.longitude,
-        hallOwner: { id: 1 }, // Replace with dynamic ID if applicable
+        hallOwner: { id: data.id }, // Replace with dynamic ID if applicable
         services: hallData.services.reduce((acc, service) => {
           if (service.serviceName && service.servicePrice) {
             acc[service.serviceName] = parseFloat(service.servicePrice);

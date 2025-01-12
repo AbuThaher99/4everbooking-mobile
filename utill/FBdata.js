@@ -2,6 +2,9 @@ import axios from "axios";
 import {BASE_URL} from "../assets/constant/ip";
 import {useContext} from "react";
 import {AuthContext} from "../store/auth-context";
+import Geolocation from 'react-native-geolocation-service';
+import {getCurrentPositionAsync, useForegroundPermissions} from "expo-location";
+import {Alert} from "react-native";
 
 const backend_url =
     "https://react-native-program-574db-default-rtdb.firebaseio.com/";
@@ -13,7 +16,8 @@ export async function storeHalls(HallsData) {
     );
     return response.data.name;
 }
-
+const [locationPermissionInformation, requestPermission] =
+    useForegroundPermissions();
 export async function storeBookedHalls(HallsData) {
     const authCtx = useContext(AuthContext);
     const response = await axios.post(`${BASE_URL}/customer/reserveHall`, HallsData, {
@@ -29,63 +33,104 @@ export async function storeBookedHalls(HallsData) {
 }
 
 // Dynamically handle empty filters
-export async function fetchHalls(page = 1, size = 10, filterData = {}, searchQuery) {
+export async function fetchHalls(page = 1, size = 10, filterData = {}, searchQuery, userId = null, token = null) {
     const {
         priceRange = [0, 10000000],
         capacityRange = [0, 2147483647],
-        section1 = null,
-        section2 = null
+        section1 = null, // Location
+        section2 = null, // Category
+        selectedType = null, // Sorting
     } = filterData;
 
     const [minPrice, maxPrice] = priceRange;
     const [minCapacity, maxCapacity] = capacityRange;
+    const selectedSort = selectedType?.value;
+
+    const params = {
+        page,
+        size,
+        search: searchQuery?.trim() || null,
+        location: section1?.trim() || null,
+        minPrice,
+        maxPrice,
+        minCapacity,
+        maxCapacity,
+        category: section2?.trim() || null,
+        sortByRecommendation: selectedSort === "SortByRecommendation",
+        filterByProximity: selectedSort === "SortByLocation",
+        sortByPrice: selectedSort === "SortByPrice",
+        radius: selectedSort === "SortByLocation" ? 15 : null,
+        userId: selectedSort === "SortByRecommendation" ? userId : null,
+    };
+
+    console.log("Request Params Before Geolocation:", params);
 
     try {
-        const params = {
-            page,
-            size,
-            minPrice,
-            maxPrice,
-            minCapacity,
-            maxCapacity,
-            sortByRecommendation: false,
-            filterByProximity: false,
-            radius: 15,
-            sortByPrice: false,
-            search: searchQuery?.trim() || null, // Reset search to null if empty
-            location: section1?.trim() || null, // Reset location to null if empty
-        };
+        if (selectedSort === "SortByLocation") {
+            console.log("Fetching halls by location...");
+            const { status } = await Location.requestForegroundPermissionsAsync();
 
-        const response = await axios.get(`${BASE_URL}/whitelist/getAll`, {
-            params,
-            headers: {
-                Accept: "*/*",
-            },
-        });
+            if (status !== "granted") {
+                console.error("Location permission denied.");
+                throw new Error("Location permission not granted.");
+            }
 
-        return response.data.content.map((hall) => ({
-            id: hall.id,
-            name: hall.name,
-            imageUrl: hall.image.split(",")[0]?.trim(),
-            location: hall.location,
-            phoneNumber: hall.phone,
-            services: hall.services,
-            capacity: hall.capacity,
-            description: hall.description,
-            price: hall.price,
-            longitude: hall.longitude,
-            latitude: hall.latitude,
-            categories: hall.categories,
-            averageRating: hall.averageRating,
-            HallRatings: hall.HallRatings || [] // Include HallRatings in the response
+            const location = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.High,
+            });
 
-        }));
+            const { latitude, longitude } = location.coords;
+            params.latitude = latitude;
+            params.longitude = longitude;
+
+            console.log("Updated Params After Geolocation:", params);
+
+            const response = await axios.get(`${BASE_URL}/whitelist/getAll`, {
+                params,
+                headers: {
+                    Accept: "*/*",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            console.log("API Response (Proximity):", response.data);
+            return response.data.content.map(formatHallData);
+        } else {
+            const response = await axios.get(`${BASE_URL}/whitelist/getAll`, {
+                params,
+                headers: {
+                    Accept: "*/*",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            console.log("API Response (Default):", response.data);
+            return response.data.content.map(formatHallData);
+        }
     } catch (error) {
-        console.error("Error fetching halls:", error.response?.data || error.message);
+        console.error("Error Fetching Halls:", error.response?.data || error.message);
         throw error;
     }
 }
 
+function formatHallData(hall) {
+    return {
+        id: hall.id,
+        name: hall.name,
+        imageUrl: hall.image.split(",")[0]?.trim(),
+        location: hall.location,
+        phoneNumber: hall.phone,
+        services: hall.services,
+        capacity: hall.capacity,
+        description: hall.description,
+        price: hall.price,
+        longitude: hall.longitude,
+        latitude: hall.latitude,
+        categories: hall.categories,
+        averageRating: hall.averageRating,
+        HallRatings: hall.HallRatings || [],
+    };
+}
 
 
 

@@ -1,15 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     View,
     Text,
     TextInput,
-    Button,
     FlatList,
     StyleSheet,
     KeyboardAvoidingView,
     Platform,
-    Keyboard,
-    TouchableWithoutFeedback,
+    TouchableOpacity,
 } from "react-native";
 import { useSelector } from "react-redux";
 import axios from "axios";
@@ -18,50 +16,45 @@ import { BASE_URL } from "../assets/constant/ip";
 export default function ChatbotPage() {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState("");
-    const [keyboardVisible, setKeyboardVisible] = useState(false); // Track keyboard visibility
-    const userData = useSelector((state) => state.bookedHalls.userData); // Fetch userData from Redux
-    const userId = userData?.id; // Extract userId
+    const flatListRef = useRef(null); // FlatList reference
+    const userData = useSelector((state) => state.bookedHalls.userData);
+    const userId = userData?.id;
 
     useEffect(() => {
-        // Start a timer to clear the chat after 60 minutes
+        // Clear chat after 60 minutes
         const timer = setTimeout(() => {
-            setMessages([]); // Clear all messages
+            setMessages([]);
             console.log("Chat cleared after 60 minutes");
-        }, 60 * 60 * 1000); // 60 minutes in milliseconds
+        }, 60 * 60 * 1000);
 
-        // Clear the timer if the component unmounts
         return () => clearTimeout(timer);
-    }, [messages]);
-
-    useEffect(() => {
-        // Add listeners for keyboard events
-        const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
-            setKeyboardVisible(true);
-        });
-        const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
-            setKeyboardVisible(false);
-        });
-
-        return () => {
-            showSubscription.remove();
-            hideSubscription.remove();
-        };
     }, []);
 
-    const sendMessage = async () => {
-        if (!inputMessage.trim()) return; // Prevent empty messages
+    const scrollToBottom = () => {
+        if (flatListRef.current) {
+            flatListRef.current.scrollToEnd({ animated: true });
+        }
+    };
 
-        // Add user message to chat
+    useEffect(() => {
+        // Scroll to the end whenever messages change
+        scrollToBottom();
+    }, [messages]);
+
+    const sendMessage = async () => {
+        const query = inputMessage;
+        setInputMessage("");
+        if (!inputMessage.trim()) return;
+
         setMessages((prevMessages) => [
             ...prevMessages,
-            { id: Date.now().toString(), type: "user", text: inputMessage },
+            { id: Date.now().toString(), type: "user", text: query },
         ]);
 
         try {
-            // Send request to chatbot API
             const response = await axios.post(
                 `${BASE_URL}/chatbot/query?userId=${userId}`,
-                { query: inputMessage },
+                { query: query },
                 {
                     headers: {
                         "Content-Type": "application/json",
@@ -70,21 +63,17 @@ export default function ChatbotPage() {
                 }
             );
 
-            // Add chatbot response to chat
             setMessages((prevMessages) => [
                 ...prevMessages,
                 { id: Date.now().toString(), type: "bot", text: response.data.response },
             ]);
         } catch (error) {
             console.error("Error sending message:", error);
-            // Add error message to chat
             setMessages((prevMessages) => [
                 ...prevMessages,
                 { id: Date.now().toString(), type: "bot", text: "Failed to get a response. Please try again." },
             ]);
         }
-
-        setInputMessage(""); // Clear input field
     };
 
     const renderMessageItem = ({ item }) => (
@@ -101,31 +90,33 @@ export default function ChatbotPage() {
     return (
         <KeyboardAvoidingView
             style={styles.container}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <View style={styles.inner}>
-                    <FlatList
-                        data={messages}
-                        renderItem={renderMessageItem}
-                        keyExtractor={(item) => item.id}
-                        contentContainerStyle={styles.chatContainer}
-                        inverted // Display the latest messages at the bottom
-                    />
+            <FlatList
+                ref={flatListRef}
+                data={messages}
+                renderItem={renderMessageItem}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.chatContainer}
+                onContentSizeChange={scrollToBottom} // Scroll when content size changes
+                onLayout={scrollToBottom} // Ensure it scrolls when layout changes
+            />
 
-                    <View style={[styles.inputContainer, keyboardVisible && styles.inputContainerActive]}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Type your message..."
-                            value={inputMessage}
-                            onChangeText={setInputMessage}
-                            onFocus={() => setKeyboardVisible(true)}
-                        />
-                        <Button title="Send" onPress={sendMessage} color="#d9a773" />
-                    </View>
-                </View>
-            </TouchableWithoutFeedback>
+            <View style={styles.inputContainer}>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Type your message..."
+                    value={inputMessage}
+                    onChangeText={setInputMessage}
+                />
+                <TouchableOpacity
+                    style={styles.sendButton}
+                    onPress={sendMessage}
+                    activeOpacity={0.7}
+                >
+                    <Text style={styles.sendButtonText}>Send</Text>
+                </TouchableOpacity>
+            </View>
         </KeyboardAvoidingView>
     );
 }
@@ -135,18 +126,14 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#f8f8f8",
     },
-    inner: {
-        flex: 1,
-    },
     chatContainer: {
-        paddingHorizontal: 10,
-        paddingBottom: 10,
+        padding: 10,
     },
     messageContainer: {
         marginVertical: 5,
-        padding: 12,
+        padding: 10,
         borderRadius: 8,
-        maxWidth: "75%",
+        maxWidth: "80%",
     },
     userMessage: {
         alignSelf: "flex-end",
@@ -158,7 +145,6 @@ const styles = StyleSheet.create({
     },
     messageText: {
         fontSize: 16,
-        color: "#333",
     },
     inputContainer: {
         flexDirection: "row",
@@ -166,11 +152,6 @@ const styles = StyleSheet.create({
         padding: 10,
         borderTopWidth: 1,
         borderColor: "#ccc",
-        backgroundColor: "#fff",
-    },
-    inputContainerActive: {
-        borderTopColor: "#d9a773",
-        backgroundColor: "#fdfdfd",
     },
     input: {
         flex: 1,
@@ -180,6 +161,16 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         paddingHorizontal: 10,
         marginRight: 10,
-        backgroundColor: "#fff",
+    },
+    sendButton: {
+        backgroundColor: "#d9a773", // Button background color
+        borderRadius: 5,
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+    },
+    sendButtonText: {
+        color: "#fff", // Button text color
+        fontWeight: "bold",
+        fontSize: 16,
     },
 });
