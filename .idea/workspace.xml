@@ -5,29 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2408878f-0359-42a5-8440-92a997a81d82" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/screens/RecommendedHallsScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/jarRepositories.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/kotlinc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/screens/EditProfileScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/App.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app.json" beforeDir="false" afterPath="$PROJECT_DIR$/app.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/BookedHallCard.js" beforeDir="false" afterPath="$PROJECT_DIR$/components/BookedHallCard.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/screens/AddAdminScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/AddAdminScreen.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/screens/AddHallScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/AddHallScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/screens/BookedScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/BookedScreen.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/screens/ChatbotPage.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/ChatbotPage.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/screens/DeletedHallsScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/DeletedHallsScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/screens/DeletedUsersScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/DeletedUsersScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/screens/FavoriteScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/FavoriteScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/screens/HallOwnerReportScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/HallOwnerReportScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/screens/HallOwnerReservedScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/HallOwnerReservedScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/screens/HallsDetails.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/HallsDetails.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/screens/FilterScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/FilterScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/screens/MainScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/MainScreen.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/screens/SettingScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/SettingScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/store/auth-context.js" beforeDir="false" afterPath="$PROJECT_DIR$/store/auth-context.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utill/FBdata.js" beforeDir="false" afterPath="$PROJECT_DIR$/utill/FBdata.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -67,7 +54,7 @@
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;update/master/update-project&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;update/master/update-pro&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
@@ -89,7 +76,9 @@
       <updated>1736548191869</updated>
       <workItem from="1736548192946" duration="2374000" />
       <workItem from="1736613661000" duration="2105000" />
-      <workItem from="1736621778805" duration="9567000" />
+      <workItem from="1736621778805" duration="10053000" />
+      <workItem from="1736635582622" duration="8853000" />
+      <workItem from="1736687029493" duration="15459000" />
     </task>
     <servers />
   </component>

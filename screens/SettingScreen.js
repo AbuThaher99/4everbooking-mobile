@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, {useState, useContext, useEffect} from 'react';
 import {
     View,
     Text,
@@ -15,7 +15,9 @@ import { Ionicons } from '@expo/vector-icons';
 import {useDispatch, useSelector} from 'react-redux';
 import * as ImagePicker from "expo-image-picker";
 import {BASE_URL} from "../assets/constant/ip";
-import {setUserData, updateUserImage} from '../store/redux/book.js'; // Adjust the path as needed
+import {setUserData, updateUserImage} from '../store/redux/book.js';
+import {isLoaded} from "expo-font";
+import LoadingOverlay from "../components/ui/LoadingOverlay"; // Adjust the path as needed
 
 export function SettingScreen({ navigation }) {
     const [isDarkMode, setIsDarkMode] = useState(false);
@@ -23,7 +25,7 @@ export function SettingScreen({ navigation }) {
     const authCtx = useContext(AuthContext);
     const userData = useSelector((state) => state.bookedHalls.userData);
     const dispatch = useDispatch();
-
+    const [loading, setLoading] = useState(false);
     const toggleDarkMode = () => {
         setIsDarkMode((previousState) => !previousState);
     };
@@ -43,14 +45,44 @@ export function SettingScreen({ navigation }) {
             },
         ]);
     };
+    // Function to fetch the latest user data
+    const refreshUserData = async () => {
+        try {
+            const response = await fetch(`${BASE_URL}/whitelist/getUser`, {
+                method: "GET",
+                headers: {
+                    Accept: "*/*",
+                    Authorization: `Bearer ${authCtx.token}`,
+                },
+            });
 
-    React.useEffect(() => {
+            if (!response.ok) {
+                throw new Error(`Failed to refresh user data. Status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            dispatch(setUserData(data)); // Update Redux state
+        } catch (error) {
+            console.error("Error refreshing user data:", error);
+            Alert.alert("Error", "Failed to refresh user data.");
+        }
+    };
+
+    useEffect(() => {
         navigation.setParams({ activeTab: 'Settings' });
-    }, [navigation]);
 
+        // Refresh user data whenever the screen gains focus
+        const unsubscribe = navigation.addListener('focus', refreshUserData);
+
+        return unsubscribe; // Cleanup listener on unmount
+    }, [navigation]);
     return (
         <ScrollView style={styles.container}>
             {/* Profile Section */}
+            {loading ? (
+                <LoadingOverlay message={"Loading Profile Image"} />
+            ) : (
+                <>
             <View style={styles.profileSection}>
                 <View style={styles.profileImageContainer}>
                     <Image
@@ -61,10 +93,12 @@ export function SettingScreen({ navigation }) {
                         }
                         style={styles.profileImage}
                     />
+
                     <TouchableOpacity
                         style={styles.cameraIcon}
                         onPress={async () => {
                             try {
+                                setLoading(true);
                                 // Step 1: Request permissions
                                 const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -139,6 +173,7 @@ export function SettingScreen({ navigation }) {
 
                                     const data = await userResponse.json();
                                     dispatch(setUserData(data));
+                                    setLoading(false);
                                 }
                             } catch (error) {
                                 console.error("Error uploading profile image:", error);
@@ -204,6 +239,15 @@ export function SettingScreen({ navigation }) {
                     />
                 </View>
             </View>
+            <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => navigation.navigate('EditProfile')}
+            >
+                <Ionicons name="create-outline" size={20} color="#fff" />
+                <Text style={styles.editButtonText}>Edit Profile</Text>
+            </TouchableOpacity>
+                </>
+            )}
         </ScrollView>
     );
 }
@@ -293,5 +337,19 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 16,
         color: '#333',
+    },editButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#d9a773',
+        padding: 10,
+        borderRadius: 10,
+        marginTop: 20,
     },
+    editButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        marginLeft: 5,
+    },
+
 });

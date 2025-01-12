@@ -21,7 +21,7 @@ function MainScreen({ navigation, route }) {
     const [filterData, setFilterData] = useState({});
     const [searchQuery, setSearchQuery] = useState("");
     const searchQuerySelector = useSelector((state) => state.bookedHalls.searchQuery);
-
+    console.log("Search query from redux:", filterData.selectedType);
     // Update search query and clear filter when searchQuerySelector is cleared
     useEffect(() => {
         if (!searchQuerySelector) {
