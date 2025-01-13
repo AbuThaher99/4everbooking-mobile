@@ -36,8 +36,8 @@ export function FilterScreen({ navigation, route }) {
     const [selectedChips, setSelectedChips] = useState({
         section1: null,
         section2: null,
-        priceRange: [500, 5000],
-        capacityRange: [10, 1000],
+        priceRange: [0, 10000000],
+        capacityRange: [0, 2147483647],
         selectedType: null, // For checkbox selection
 
     });
