@@ -6,42 +6,42 @@ import {
     View,
     KeyboardAvoidingView,
     Platform,
+    TouchableWithoutFeedback,
+    Keyboard,
+    Pressable,
 } from 'react-native';
-import { Button, RadioButton } from 'react-native-paper';
-import { Chip } from 'react-native-paper';
+import { RadioButton } from 'react-native-paper';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
 
 const LocationChip = React.memo(({ location, section, selectedChips, handleChipPress }) => (
-    <View style={styles.chipContainer}>
-        <Chip
-            mode={selectedChips[section] === location ? 'flat' : 'outlined'}
-            selected={selectedChips[section] === location}
-            style={[
-                styles.chipStyle,
-                selectedChips[section] === location && styles.chipSelected,
-            ]}
-            textStyle={[
+    <Pressable
+        style={[
+            styles.chipStyle,
+            selectedChips[section] === location && styles.chipSelected,
+        ]}
+        onPress={() => handleChipPress(section, location)}
+    >
+        <Text
+            style={
                 selectedChips[section] === location
                     ? styles.chipTextSelected
-                    : styles.chipTextUnselected,
-            ]}
-            onPress={() => handleChipPress(section, location)}
+                    : styles.chipTextUnselected
+            }
         >
             {location}
-        </Chip>
-    </View>
+        </Text>
+    </Pressable>
 ));
 
 export function FilterScreen({ navigation, route }) {
     const [selectedChips, setSelectedChips] = useState({
         section1: null,
         section2: null,
-        priceRange: [0, 10000000],
-        capacityRange: [0, 2147483647],
-        selectedType: null, // For checkbox selection
-
+        priceRange: [500, 5000],
+        capacityRange: [10, 1000],
+        selectedType: null,
     });
-    const { onApply } = route.params;
+    const { onApply } = route.params || {};
 
     const handleChipPress = (section, chip) => {
         setSelectedChips((prevState) => ({
@@ -63,17 +63,11 @@ export function FilterScreen({ navigation, route }) {
             capacityRange: values,
         }));
     };
+
     const handleSortChange = (value, label) => {
         setSelectedChips((prevState) => ({
             ...prevState,
             selectedType: { value, label },
-        }));
-    };
-
-    const handleTypeChange = (type) => {
-        setSelectedChips((prevState) => ({
-            ...prevState,
-            selectedType: type,
         }));
     };
 
@@ -96,132 +90,141 @@ export function FilterScreen({ navigation, route }) {
         'Yatta',
     ];
 
+    const eventTypes = ['PARTIES', 'FUNERALS', 'MEETINGS', 'BIRTHDAYS', 'WEDDINGS'];
+
     const applyFilters = () => {
         if (onApply) {
-            onApply(selectedChips);
+            onApply(selectedChips); // Pass the selected filters to the MainScreen
         }
-        navigation.goBack();
+        navigation.goBack(); // Close the modal after applying filters
     };
 
     return (
         <KeyboardAvoidingView
-            style={{ flex: 1 }}
+            style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-            <ScrollView contentContainerStyle={styles.contentContainer}>
-                <Text style={styles.sectionTitle}>Section 1</Text>
-                <View style={styles.chipGroup}>
-                    {locations.map((location) => (
-                        <LocationChip
-                            key={location}
-                            location={location}
-                            section="section1"
-                            selectedChips={selectedChips}
-                            handleChipPress={handleChipPress}
-                        />
-                    ))}
-                </View>
-
-                <Text style={styles.sectionTitle}>Section 2</Text>
-                <View style={styles.chipGroup}>
-                    {['PARTIES', 'FUNERALS', 'MEETINGS', 'BIRTHDAYS', 'WEDDINGS'].map((key) => (
-                        <LocationChip
-                            key={key}
-                            location={key}
-                            section="section2"
-                            selectedChips={selectedChips}
-                            handleChipPress={handleChipPress}
-                        />
-                    ))}
-                </View>
-
-                <Text style={styles.sectionTitle}>Price Range</Text>
-                <View style={styles.sliderContainer}>
-                    <Text style={styles.priceText}>
-                        ${selectedChips.priceRange[0]} - ${selectedChips.priceRange[1]}
-                    </Text>
-                    <MultiSlider
-                        values={selectedChips.priceRange}
-                        min={500}
-                        max={5000}
-                        step={100}
-                        onValuesChange={handlePriceChange}
-                        selectedStyle={styles.selectedTrack}
-                        unselectedStyle={styles.unselectedTrack}
-                        markerStyle={styles.markerStyle}
-                        trackStyle={styles.trackStyle}
-                    />
-                </View>
-
-                <Text style={styles.sectionTitle}>Capacity</Text>
-                <View style={styles.sliderContainer}>
-                    <Text style={styles.priceText}>
-                        {selectedChips.capacityRange[0]} - {selectedChips.capacityRange[1]}
-                    </Text>
-                    <MultiSlider
-                        values={selectedChips.capacityRange}
-                        min={10}
-                        max={1000}
-                        step={10}
-                        onValuesChange={handleCapacityChange}
-                        selectedStyle={styles.selectedTrack}
-                        unselectedStyle={styles.unselectedTrack}
-                        markerStyle={styles.markerStyle}
-                        trackStyle={styles.trackStyle}
-                    />
-                </View>
-
-                <Text style={styles.sectionTitle}>Choose Type</Text>
-                <RadioButton.Group
-                    onValueChange={(value) => {
-                        // Find the corresponding label for the selected value
-                        const labelMap = {
-                            sortByPrice: 'Sort by Price',
-                            sortByLocation: 'Sort by Location',
-                            sortByRecommended: 'Sort by Recommended',
-                        };
-                        handleSortChange(value, labelMap[value]);
-                    }}
-                    value={selectedChips.selectedType?.value} // Ensure this handles only the value
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <ScrollView
+                    contentContainerStyle={styles.contentContainer}
+                    keyboardShouldPersistTaps="handled"
                 >
-                    <View style={styles.radioButtonContainer}>
-                        <RadioButton.Item
-                            label="Sort by Price"
-                            value={"SortByPrice"}
-                            onPress={() => handleSortChange("SortByPrice", "Sort by Price")}
+                    {/* Section 1: Locations */}
+                    <Text style={styles.sectionTitle}>Locations</Text>
+                    <View style={styles.chipGroup}>
+                        {locations.map((location) => (
+                            <LocationChip
+                                key={location}
+                                location={location}
+                                section="section1"
+                                selectedChips={selectedChips}
+                                handleChipPress={handleChipPress}
+                            />
+                        ))}
+                    </View>
 
-                        />
-                        <RadioButton.Item
-                            label="Sort by Location"
-                            value={"SortByLocation"}
-                            onPress={() => handleSortChange("SortByLocation", "Sort by Location")}
+                    {/* Section 2: Event Types */}
+                    <Text style={styles.sectionTitle}>Event Types</Text>
+                    <View style={styles.chipGroup}>
+                        {eventTypes.map((eventType) => (
+                            <LocationChip
+                                key={eventType}
+                                location={eventType}
+                                section="section2"
+                                selectedChips={selectedChips}
+                                handleChipPress={handleChipPress}
+                            />
+                        ))}
+                    </View>
 
-                        />
-                        <RadioButton.Item
-                            label="Sort by Recommended"
-                            value={"SortByRecommended"}
-                            onPress={() => handleSortChange("SortByRecommended", "Sort by Recommended")}
-
+                    {/* Price Range Slider */}
+                    <Text style={styles.sectionTitle}>Price Range</Text>
+                    <View style={styles.sliderContainer}>
+                        <Text style={styles.priceText}>
+                            ${selectedChips.priceRange[0]} - ${selectedChips.priceRange[1]}
+                        </Text>
+                        <MultiSlider
+                            values={selectedChips.priceRange}
+                            min={500}
+                            max={5000}
+                            step={100}
+                            onValuesChange={handlePriceChange}
+                            selectedStyle={styles.selectedTrack}
+                            unselectedStyle={styles.unselectedTrack}
+                            markerStyle={styles.markerStyle}
+                            trackStyle={styles.trackStyle}
                         />
                     </View>
-                </RadioButton.Group>
 
-                <Button style={styles.applyButton} onPress={applyFilters} mode="contained">
-                    Apply
-                </Button>
-            </ScrollView>
+                    {/* Capacity Slider */}
+                    <Text style={styles.sectionTitle}>Capacity</Text>
+                    <View style={styles.sliderContainer}>
+                        <Text style={styles.priceText}>
+                            {selectedChips.capacityRange[0]} - {selectedChips.capacityRange[1]}
+                        </Text>
+                        <MultiSlider
+                            values={selectedChips.capacityRange}
+                            min={10}
+                            max={1000}
+                            step={10}
+                            onValuesChange={handleCapacityChange}
+                            selectedStyle={styles.selectedTrack}
+                            unselectedStyle={styles.unselectedTrack}
+                            markerStyle={styles.markerStyle}
+                            trackStyle={styles.trackStyle}
+                        />
+                    </View>
+
+                    {/* Radio Buttons for Sorting */}
+                    <Text style={styles.sectionTitle}>Choose Type</Text>
+                    <RadioButton.Group
+                        onValueChange={(value) => {
+                            const labelMap = {
+                                sortByPrice: 'Sort by Price',
+                                sortByLocation: 'Sort by Location',
+                                sortByRecommended: 'Sort by Recommended',
+                            };
+                            handleSortChange(value, labelMap[value]);
+                        }}
+                        value={selectedChips.selectedType?.value}
+                    >
+                        <View style={styles.radioButtonContainer}>
+                            <RadioButton.Item
+                                label="Sort by Price"
+                                value="SortByPrice"
+                            />
+                            <RadioButton.Item
+                                label="Sort by Location"
+                                value="SortByLocation"
+                            />
+                            <RadioButton.Item
+                                label="Sort by Recommended"
+                                value="SortByRecommended"
+                            />
+                        </View>
+                    </RadioButton.Group>
+
+                    {/* Apply Button */}
+                    <Pressable
+                        style={styles.applyButton}
+                        onPress={applyFilters}
+                    >
+                        <Text style={styles.applyButtonText}>Apply</Text>
+                    </Pressable>
+                </ScrollView>
+            </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
     );
 }
 
 const styles = StyleSheet.create({
-    contentContainer: {
-        paddingBottom: 40, // Ensures Apply button is always scrollable
-    },
     container: {
         flex: 1,
-        backgroundColor: '#f9f9f9',
-        padding: 20,
+        backgroundColor: '#f5f5f5',
+    },
+    contentContainer: {
+        padding: 16,
+        paddingBottom: 40,
     },
     sectionTitle: {
         fontSize: 18,
@@ -234,14 +237,14 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         marginBottom: 20,
     },
-    chipContainer: {
-        margin: 5,
-    },
     chipStyle: {
+        borderWidth: 1,
         borderColor: '#c58645',
         backgroundColor: '#fff',
         paddingVertical: 10,
         paddingHorizontal: 15,
+        margin: 5,
+        borderRadius: 20,
     },
     chipSelected: {
         backgroundColor: '#c58645',
@@ -279,10 +282,15 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     applyButton: {
-        marginBottom: 20,
+        marginVertical: 20,
         backgroundColor: '#c58645',
         padding: 15,
         borderRadius: 10,
         alignItems: 'center',
+    },
+    applyButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
     },
 });

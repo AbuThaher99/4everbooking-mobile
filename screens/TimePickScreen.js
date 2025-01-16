@@ -53,7 +53,7 @@ export function TimePickScreen({ navigation, route }) {
         const [year, month, day] = selectedDate.split('-').map(Number);
         const isoDate = new Date(Date.UTC(year, month - 1, day)).toISOString();
 
-        navigation.navigate('pay', {
+        navigation.replace('pay', {
             id: id,
             selectedDate: isoDate, // Send the ISO date format
             selectedCategory: selectedCategory,
@@ -102,16 +102,17 @@ const styles = StyleSheet.create({
     },
     floatingButton: {
         position: 'absolute',
-        bottom: Platform.OS === "android" ? "12%" : 20,
-        right: "1%",
-        backgroundColor: '#d9a773',
+        bottom: Platform.OS === "android" ? 100 : 50,
+        right: 20,
+        backgroundColor: '#d9a773', // Modern blue button
         borderRadius: 50,
-        padding: 15,
-        elevation: 5,
+        paddingVertical: 15,
+        paddingHorizontal: 20,
+        elevation: 6,
         shadowColor: '#000',
         shadowOpacity: 0.3,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 3 },
+        shadowRadius: 6,
         flexDirection: 'row',
         alignItems: 'center',
     },

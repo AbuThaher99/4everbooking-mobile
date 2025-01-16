@@ -8,7 +8,6 @@ import HallsOutput from "../components/ui/HallsOutpup";
 import { AuthContext } from "../store/auth-context";
 import { useIsFocused } from "@react-navigation/native";
 import { useSelector } from "react-redux";
-import * as Location from "expo-location";
 
 function MainScreen({ navigation }) {
     const hallsCtx = useContext(HallsContext);
@@ -20,7 +19,6 @@ function MainScreen({ navigation }) {
     const [totalPages, setTotalPages] = useState(1);
     const [filterData, setFilterData] = useState({});
     const [searchQuery, setSearchQuery] = useState("");
-    const [userLocation, setUserLocation] = useState(null);
 
     const searchQuerySelector = useSelector((state) => state.bookedHalls.searchQuery);
     const userData = useSelector((state) => state.bookedHalls.userData);
@@ -46,14 +44,10 @@ function MainScreen({ navigation }) {
                     updatedFilterData,
                     updatedSearchQuery,
                     userData.id,
-
                 );
 
-                console.log("Fetched halls:", halls);
-                console.log("Total pages:", totalPages);
-
-                hallsCtx.setHall(halls); // Pass only halls to the context
-                setTotalPages(totalPages); // Update the totalPages state
+                hallsCtx.setHall(halls);
+                setTotalPages(totalPages);
             } catch (error) {
                 console.error("Error fetching halls:", error.message);
             } finally {
@@ -62,7 +56,7 @@ function MainScreen({ navigation }) {
         }
 
         getHalls();
-    }, [filterData, searchQuery, currentPage]);
+    }, [filterData, searchQuery, currentPage]); // Ensure this useEffect depends on filterData
 
     useEffect(() => {
         if (isFocused) {
@@ -70,9 +64,8 @@ function MainScreen({ navigation }) {
         }
     }, [isFocused]);
 
-
     const handleFilterApply = (data) => {
-        setFilterData(data);
+        setFilterData(data); // Update filterData state
         setCurrentPage(1); // Reset to the first page when filter changes
     };
 
@@ -114,7 +107,6 @@ function MainScreen({ navigation }) {
             </Pressable>
         </View>
     );
-
 }
 
 export default MainScreen;
@@ -129,7 +121,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginVertical: 10,
         marginHorizontal: 20,
-        marginBottom: 20, // Add bottom margin to avoid overlapping
+        marginBottom: 20,
     },
     pageText: {
         fontSize: 16,
@@ -138,8 +130,8 @@ const styles = StyleSheet.create({
     },
     floatingButton: {
         position: "absolute",
-        bottom: 90, // Adjust position to avoid overlapping
-        right: 20, // Keep it aligned to the right
+        bottom: 90,
+        right: 20,
         backgroundColor: "#d9a773",
         borderRadius: 30,
         width: 50,
