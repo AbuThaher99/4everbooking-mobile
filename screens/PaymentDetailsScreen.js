@@ -28,94 +28,101 @@ function PaymentDetailsScreen({route, navigation}) {
     // Step 2: Calculate Total Price
     // Calculate total price on mount
     React.useEffect(() => {
-        const totalPrices = Object.values(selectedServices).reduce((acc, price) => acc + price, 0)+ selectedPrice;
+        const totalPrices = Object.values(selectedServices).reduce((acc, price) => acc + price, 0) + selectedPrice;
         console.log(totalPrices);
+        setAmount(totalPrices.toString()); // Set amount here
         setTotalPrice(totalPrices);
     }, [selectedServices, selectedPrice]);
 
+
     const handleSubmit = async () => {
-        if (!amount || !currency || !cardholderName) {
+        console.log('handleSubmit called');
+        if (!currency || !cardholderName) {
             Alert.alert('Error', 'Please fill in all fields.');
             return;
         }
 
         setIsProcessing(true);
+        console.log('Processing started');
 
         try {
-            // Step 1: Fetch Connected Account ID
+            console.log('Fetching connected account ID');
             const connectedAccountResponse = await axios.get(
                 `${BASE_URL}/customer/connectedAccountId/${id}`,
                 {
                     headers: {
                         Authorization: `Bearer ${authCtx.token}`,
                         Accept: "*/*",
-                        "Content-Type": "application/json"
-                    }
+                        "Content-Type": "application/json",
+                    },
                 }
             );
 
             const connectedAccountId = connectedAccountResponse.data;
-            console.log("Connected Account ID:", connectedAccountId);
+            console.log('Connected Account ID:', connectedAccountId);
 
-
-            // Step 2: Create Payment Intent
+            console.log('Creating payment intent');
             const paymentIntentResponse = await axios.post(
                 `${BASE_URL}/payments/create-payment-intent`,
                 {
-                    amount: totalPrices*100,
+                    amount: totalPrice * 100,
                     currency,
-                    connectedAccountId
+                    connectedAccountId,
                 },
                 {
                     headers: {
                         Authorization: `Bearer ${authCtx.token}`,
-                        "Content-Type": "application/json"
-                    }
+                        "Content-Type": "application/json",
+                    },
                 }
             );
 
-            const {clientSecret} = paymentIntentResponse.data;
-            console.log("Client Secret:", clientSecret);
+            const { clientSecret } = paymentIntentResponse.data;
+            console.log('Client Secret:', clientSecret);
 
-            // Step 3: Confirm Payment
-            const {error, paymentIntent} = await stripe.confirmPayment(clientSecret, {
+            console.log('Confirming payment with Stripe');
+            const { error, paymentIntent } = await stripe.confirmPayment(clientSecret, {
                 paymentMethodType: 'Card',
                 paymentMethodData: {
                     billingDetails: {
-                        name: cardholderName
-                    }
-                }
+                        name: cardholderName,
+                    },
+                },
             });
 
             if (error) {
-                console.error("Payment Error:", error);
+                console.error('Payment error:', error);
                 Alert.alert('Payment Failed', error.message);
-            } else if (paymentIntent && paymentIntent.status === 'Succeeded') {
-                console.log("Payment Successful:", paymentIntent);
-                Alert.alert('Payment Success', 'Your payment was successful.');
+                setIsProcessing(false);
+                return;
+            }
 
-                // Proceed with reservation logic here
+            if (paymentIntent && paymentIntent.status === 'Succeeded') {
+                console.log('Payment succeeded, fetching customer data');
                 const customerDataResponse = await axios.get(
                     `${BASE_URL}/customer/getCustomerByUserId/${userData.id}`,
                     {
                         headers: {
                             Authorization: `Bearer ${authCtx.token}`,
                             "Content-Type": "application/json",
-                            Accept: "*/*"
-                        }
+                            Accept: "*/*",
+                        },
                     }
                 );
 
                 const customerData = customerDataResponse.data;
+                console.log('Customer Data:', customerData);
+
                 const newHallInstance = {
                     hallId: id,
                     customerId: customerData,
                     time: selectedDate,
                     services: selectedServices,
-                    endTime: null,
-                    selectedCategory
+                    endTime: selectedDate,
+                    selectedCategory,
                 };
 
+                console.log('Reserving hall');
                 await axios.post(`${BASE_URL}/customer/reserveHall`, newHallInstance, {
                     headers: {
                         Authorization: `Bearer ${authCtx.token}`,
@@ -123,15 +130,27 @@ function PaymentDetailsScreen({route, navigation}) {
                     },
                 });
 
-                navigation.navigate('tabHome');
+                Alert.alert('Reservation Success', 'Your reservation is successful');
+
+                try {
+                    console.log('Navigating to booked screen');
+                    navigation.navigate('tabHome', {
+                        screen: 'booked',
+                    });
+                } catch (err) {
+                    console.error('Navigation error:', err);
+                }
             }
         } catch (err) {
-            console.error("Error:", err);
-            Alert.alert('Error', err.message || 'Something went wrong.');
+            console.error('Error:', err);
+            Alert.alert('Error', err.message || 'Something went wroقng.');
         } finally {
+            console.log('Processing finished');
             setIsProcessing(false);
         }
     };
+
+
 
     return (
         <View style={styles.container}>
@@ -139,19 +158,20 @@ function PaymentDetailsScreen({route, navigation}) {
 
             <TextInput
                 style={styles.input}
-                placeholder={totalPrice.valueOf().toString()}
+                value={amount} // Display calculated amount
+                editable={false} // Prevent user input
+                placeholder="Amount"
                 keyboardType="numeric"
-                value={amount}
-                onChangeText={setAmount}
-                editable={false}
             />
 
+
             <TextInput
-                style={styles.input}
+                style={[styles.input, { display: 'none' }]}
                 placeholder="Currency (e.g., usd)"
                 value={currency}
                 onChangeText={setCurrency}
             />
+
 
             <TextInput
                 style={styles.input}

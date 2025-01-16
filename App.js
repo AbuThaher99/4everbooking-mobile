@@ -520,34 +520,36 @@ function AuthenticatedStack() {
             />
 
             <Stack.Screen
-                name={"details"}
+                name="details"
                 component={HallsDetails}
-                options={({}) => {
-                    const hallId = hallData.id
+                options={({ route }) => {
+                    const hallId = route.params?.id; // Retrieve hall ID from route params
 
                     return {
+                        headerShown: true, // Show the header
                         headerRight: () => (
                             <TouchableOpacity
                                 onPress={() => MakeFavorite(hallId)} // Pass hallId to the function
-                                style={{marginRight: 10}}
+                                style={{ marginRight: 10 }}
                             >
                                 <Icon
-                                    name={favoriteStatus[hallId] ? "star" : "star-outline"}
+                                    name={favoriteStatus[hallId] ? "star" : "star-outline"} // Conditional icon rendering
                                     size={30}
-                                    color={favoriteStatus[hallId] ? "gold" : "black"}
+                                    color={favoriteStatus[hallId] ? "gold" : "black"} // Conditional color rendering
                                 />
                             </TouchableOpacity>
                         ),
+                        presentation: 'modal', // Optional: Use modal presentation to fix responsiveness
                     };
                 }}
             />
 
 
-            <Stack.Screen name={"time"} component={TimePickScreen}/>
+            <Stack.Screen name={"time"} component={TimePickScreen}  options={{ presentation: 'modal' }}/>
 
-            <Stack.Screen name={"pay"} component={PaymentDetailsScreen}/>
+            <Stack.Screen name={"pay"} component={PaymentDetailsScreen} options={{ presentation: 'modal' }}/>
 
-            <Stack.Screen name={"Filter"} component={FilterScreen}/>
+            <Stack.Screen name={"Filter"} component={FilterScreen}  options={{ presentation: 'modal' }}/>
 
             <Stack.Screen name={"addHall"} component={AddHallScreen} options={{title: null}}/>
 

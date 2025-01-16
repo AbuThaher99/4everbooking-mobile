@@ -6,10 +6,14 @@
   <component name="ChangeListManager">
     <list default="true" id="2408878f-0359-42a5-8440-92a997a81d82" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/App.js" beforeDir="false" afterPath="$PROJECT_DIR$/App.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/screens/FilterScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/FilterScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/screens/HallsDetails.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/HallsDetails.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/screens/MainScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/MainScreen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/store/HallsContext.js" beforeDir="false" afterPath="$PROJECT_DIR$/store/HallsContext.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utill/FBdata.js" beforeDir="false" afterPath="$PROJECT_DIR$/utill/FBdata.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/screens/PaymentDetailsScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/PaymentDetailsScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/screens/TimePickScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/screens/TimePickScreen.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,7 +52,7 @@
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
     &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;enhance/master/enhance-project&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;update/master/update-main-screen&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
@@ -75,6 +79,11 @@
       <workItem from="1736687029493" duration="15459000" />
       <workItem from="1736708827953" duration="3452000" />
       <workItem from="1736716034198" duration="8008000" />
+      <workItem from="1736725805159" duration="159000" />
+      <workItem from="1736795770796" duration="2103000" />
+      <workItem from="1736798111770" duration="1511000" />
+      <workItem from="1736886401454" duration="14487000" />
+      <workItem from="1736975307479" duration="9266000" />
     </task>
     <servers />
   </component>

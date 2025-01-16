@@ -131,7 +131,10 @@ const [markerPosition, setMarkerPosition] = useState({
 
     return (
         <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scrollViewContent}>
+            <ScrollView
+                contentContainerStyle={styles.scrollViewContent}
+                keyboardShouldPersistTaps="handled"
+            >
                 <View style={styles.mealItem}>
                     <View style={styles.imageContainer}>
                         <Image source={{uri: imageUrl}} style={styles.image}/>
@@ -254,18 +257,19 @@ const [markerPosition, setMarkerPosition] = useState({
                 <View style={styles.innerContainer}>
 
                 </View>
+                {!isBooked &&
+                    <TouchableOpacity style={styles.floatingButton} onPress={() => {
+                        if (!selectedLabel) {
+                            alert("Please choose a category.");
+                            return;
+                        }
+                        navigation.replace("time", { id: id, selectedCategory: selectedLabel, selectedServices: selectedServiceList, selectedPrice: value });
+                    }}>
+                        <Text style={styles.buttonText}>Book Now</Text>
+                    </TouchableOpacity>
+                }
             </ScrollView>
-            {!isBooked &&
-                <TouchableOpacity style={styles.floatingButton} onPress={() => {
-                    if (!selectedLabel) {
-                        alert("Please choose a category.");
-                        return;
-                    }
-                    navigation.navigate("time", { id: id, selectedCategory: selectedLabel, selectedServices: selectedServiceList, selectedPrice: value });
-                }}>
-                    <Text style={styles.buttonText}>Book Now</Text>
-                </TouchableOpacity>
-            }
+
         </View>
     );
 }
@@ -374,19 +378,26 @@ const styles = StyleSheet.create({
 
     floatingButton: {
         position: 'absolute',
-        bottom: Platform.OS === "android" ? "12%" : 20,
-        left: 0,
-        right: 0,
+        bottom: '5%', // Percentage-based position for flexibility
+        left: '5%', // Percentage-based margins
+        right: '5%',
         backgroundColor: '#d9a773',
         borderRadius: 20,
-        marginHorizontal: 16,
-        padding: 16,
+        paddingVertical: 15, // Adjust padding for touch area
         alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 5, // Shadow for Android
+        shadowColor: '#000', // Shadow for iOS
+        shadowOpacity: 0.2,
+        shadowOffset: { width: 0, height: 3 },
+        shadowRadius: 4,
+        zIndex: 1000, // Ensure button appears above other elements
     },
-
     buttonText: {
         color: 'white',
         fontWeight: 'bold',
+        fontSize: 16, // Adjust font size to fit text in smaller devices
+        textAlign: 'center',
     },
 
     info: {
